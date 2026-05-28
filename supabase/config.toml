@@ -1,0 +1,5 @@
+# Supabase local dev config (optional)
+# See https://supabase.com/docs/guides/cli
+
+[project]
+id = "homeshare"
