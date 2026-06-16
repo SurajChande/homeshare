@@ -5,13 +5,13 @@ import { theme } from '@/lib/theme';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
 
 export default function ForgotPasswordScreen() {
@@ -31,11 +31,6 @@ export default function ForgotPasswordScreen() {
     try {
       await resetPassword(email);
       setSent(true);
-      Alert.alert(
-        'Email sent',
-        'Check your email for a password reset link. If not found, check your spam folder.'
-      );
-      setTimeout(() => router.back(), 2000);
     } catch (e: unknown) {
       Alert.alert('Error', getAuthErrorMessage(e));
     } finally {
@@ -48,16 +43,25 @@ export default function ForgotPasswordScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <Text style={styles.title}>Reset Password</Text>
+      <Text style={styles.title}>Reset password</Text>
       <Text style={styles.subtitle}>
-        Enter your email address and we'll send you a link to reset your password.
+        Enter your email and we'll send you a link to reset your password.
       </Text>
 
-      {!sent ? (
+      {sent ? (
+        <View style={styles.successBox}>
+          <Text style={styles.successTitle}>Check your inbox</Text>
+          <Text style={styles.successMessage}>
+            We've sent a reset link to {email}. Check your spam folder if you don't see it.
+          </Text>
+        </View>
+      ) : (
         <>
+          <Text style={styles.fieldLabel}>Email</Text>
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder="you@example.com"
+            placeholderTextColor={theme.colors.textSecondary}
             autoCapitalize="none"
             keyboardType="email-address"
             value={email}
@@ -66,20 +70,14 @@ export default function ForgotPasswordScreen() {
           />
           <Button title="Send reset link" onPress={onSendReset} loading={loading} />
         </>
-      ) : (
-        <View style={styles.successBox}>
-          <Text style={styles.successText}>✓ Reset link sent!</Text>
-          <Text style={styles.successSubtext}>
-            We've sent a password reset link to {email}
-          </Text>
-        </View>
       )}
 
       <Button
         title="Back to login"
-        variant="secondary"
+        variant="ghost"
         onPress={() => router.back()}
         disabled={loading}
+        style={styles.backBtn}
       />
     </KeyboardAvoidingView>
   );
@@ -93,42 +91,55 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 26,
+    fontWeight: '800',
     color: theme.colors.text,
+    letterSpacing: -0.5,
     marginBottom: theme.spacing.sm,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: theme.colors.textSecondary,
     marginBottom: theme.spacing.xl,
-    lineHeight: 20,
+    lineHeight: 22,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
   },
   input: {
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
+    backgroundColor: theme.colors.background,
+    borderWidth: 1.5,
     borderColor: theme.colors.border,
-    borderRadius: theme.radius.sm,
-    padding: theme.spacing.md,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: 13,
     marginBottom: theme.spacing.md,
     fontSize: 16,
+    color: theme.colors.text,
   },
   successBox: {
-    backgroundColor: '#f0fdf4',
-    borderWidth: 1,
-    borderColor: '#22c55e',
-    borderRadius: theme.radius.sm,
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1.5,
+    borderColor: '#86EFAC',
+    borderRadius: theme.radius.md,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.md,
+    gap: theme.spacing.xs,
   },
-  successText: {
+  successTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#166534',
-    marginBottom: theme.spacing.sm,
   },
-  successSubtext: {
+  successMessage: {
     fontSize: 14,
-    color: '#4b5563',
+    color: '#15803D',
+    lineHeight: 20,
+  },
+  backBtn: {
+    marginTop: theme.spacing.md,
   },
 });

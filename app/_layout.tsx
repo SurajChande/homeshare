@@ -38,12 +38,22 @@ function AuthGate() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        headerStyle: { backgroundColor: theme.colors.background },
+        headerTintColor: theme.colors.accent,
+        headerTitleStyle: { color: theme.colors.text, fontWeight: '700', fontSize: 17 },
+        headerShadowVisible: false,
+        headerBackTitle: 'Back',
+      }}
+    >
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="listing" options={{ headerShown: true, headerBackTitle: 'Back' }} />
+      <Stack.Screen name="listing" options={{ headerShown: true }} />
       <Stack.Screen name="booking" options={{ headerShown: true, title: 'Booking' }} />
       <Stack.Screen name="chat" options={{ headerShown: true, title: 'Chat' }} />
+      <Stack.Screen name="admin" options={{ headerShown: false }} />
     </Stack>
   );
 }

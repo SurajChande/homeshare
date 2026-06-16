@@ -12,6 +12,7 @@ interface AuthContextValue {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
+  isAdmin: boolean;
   loading: boolean;
   isRecoveryMode: boolean;
   signIn: (email: string, password: string) => Promise<void>;
@@ -127,6 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session,
         user: session?.user ?? null,
         profile,
+        isAdmin: profile?.is_admin === true,
         loading,
         isRecoveryMode,
         signIn,

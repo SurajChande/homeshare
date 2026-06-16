@@ -10,6 +10,9 @@ export function EmptyState({
 }) {
   return (
     <View style={styles.container}>
+      <View style={styles.iconCircle}>
+        <Text style={styles.icon}>○</Text>
+      </View>
       <Text style={styles.title}>{title}</Text>
       {message ? <Text style={styles.message}>{message}</Text> : null}
     </View>
@@ -21,18 +24,32 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: theme.spacing.lg,
+    padding: theme.spacing.xl,
+    gap: theme.spacing.sm,
+  },
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: theme.colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  icon: {
+    fontSize: 28,
+    color: theme.colors.textSecondary,
   },
   title: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
     color: theme.colors.text,
     textAlign: 'center',
   },
   message: {
-    marginTop: theme.spacing.sm,
-    fontSize: 15,
+    fontSize: 14,
     color: theme.colors.textSecondary,
     textAlign: 'center',
+    lineHeight: 20,
   },
 });

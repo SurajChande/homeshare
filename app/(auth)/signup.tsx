@@ -4,6 +4,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -44,7 +45,6 @@ export default function SignupScreen() {
           'We sent a confirmation link to your inbox. Click it, then return here to log in.\n\nFor local testing, disable email confirmation in Supabase Dashboard → Authentication → Providers → Email.'
         );
       }
-      // If email confirmation is off, AuthGate redirects to the app automatically
     } catch (e: unknown) {
       Alert.alert('Sign up failed', getAuthErrorMessage(e));
     } finally {
@@ -54,67 +54,112 @@ export default function SignupScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={styles.outer}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <Text style={styles.title}>Create account</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Display name"
-        value={displayName}
-        onChangeText={setDisplayName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password (min 6 chars)"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-      <Button title="Sign up" onPress={onSignup} loading={loading} />
-      <Link href="/(auth)/login" style={styles.link}>
-        <Text style={styles.linkText}>Already have an account?</Text>
-      </Link>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <View style={styles.header}>
+          <Text style={styles.title}>Create account</Text>
+          <Text style={styles.subtitle}>Join Homeshare and start sharing</Text>
+        </View>
+
+        <Text style={styles.fieldLabel}>Your name</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Jane Smith"
+          placeholderTextColor={theme.colors.textSecondary}
+          value={displayName}
+          onChangeText={setDisplayName}
+        />
+        <Text style={styles.fieldLabel}>Email</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="you@example.com"
+          placeholderTextColor={theme.colors.textSecondary}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
+        />
+        <Text style={styles.fieldLabel}>Password</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Minimum 6 characters"
+          placeholderTextColor={theme.colors.textSecondary}
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+        <Button title="Create account" onPress={onSignup} loading={loading} style={styles.signupBtn} />
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Already have an account? </Text>
+          <Link href="/(auth)/login">
+            <Text style={styles.footerLink}>Log in</Text>
+          </Link>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  outer: {
     flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  container: {
+    flexGrow: 1,
     justifyContent: 'center',
     padding: theme.spacing.lg,
-    backgroundColor: theme.colors.background,
+  },
+  header: {
+    marginBottom: theme.spacing.xl,
   },
   title: {
     fontSize: 28,
-    fontWeight: '700',
-    marginBottom: theme.spacing.lg,
+    fontWeight: '800',
     color: theme.colors.text,
+    letterSpacing: -0.5,
+    marginBottom: theme.spacing.xs,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: theme.colors.textSecondary,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
   },
   input: {
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
+    backgroundColor: theme.colors.background,
+    borderWidth: 1.5,
     borderColor: theme.colors.border,
-    borderRadius: theme.radius.sm,
-    padding: theme.spacing.md,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: 13,
     marginBottom: theme.spacing.md,
     fontSize: 16,
+    color: theme.colors.text,
   },
-  link: {
-    marginTop: theme.spacing.lg,
+  signupBtn: {
+    marginTop: theme.spacing.xs,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
+    marginTop: theme.spacing.xl,
   },
-  linkText: {
-    color: theme.colors.primary,
-    fontSize: 16,
+  footerText: {
+    color: theme.colors.textSecondary,
+    fontSize: 15,
+  },
+  footerLink: {
+    color: theme.colors.accent,
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

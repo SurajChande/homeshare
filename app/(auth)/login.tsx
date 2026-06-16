@@ -6,12 +6,13 @@ import { theme } from '@/lib/theme';
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
 
 export default function LoginScreen() {
@@ -28,7 +29,6 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await signIn(email.trim(), password);
-      // AuthGate redirects to (tabs) when session is set
     } catch (e: unknown) {
       Alert.alert('Login failed', getAuthErrorMessage(e));
     } finally {
@@ -76,32 +76,80 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
     backgroundColor: theme.colors.background,
   },
-  brand: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: theme.colors.primary,
-    marginBottom: theme.spacing.sm,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: theme.colors.textSecondary,
+  header: {
+    alignItems: 'center',
     marginBottom: theme.spacing.xl,
   },
+  logoBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  logoLetter: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: theme.colors.textOnPrimary,
+  },
+  brand: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: theme.colors.text,
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
+    textAlign: 'center',
+  },
+  form: {
+    marginBottom: theme.spacing.lg,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
+  },
   input: {
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
+    backgroundColor: theme.colors.background,
+    borderWidth: 1.5,
     borderColor: theme.colors.border,
-    borderRadius: theme.radius.sm,
-    padding: theme.spacing.md,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: 13,
     marginBottom: theme.spacing.md,
     fontSize: 16,
+    color: theme.colors.text,
   },
-  link: {
-    marginTop: theme.spacing.lg,
+  loginBtn: {
+    marginTop: theme.spacing.xs,
+  },
+  forgotLink: {
+    alignSelf: 'center',
+    marginTop: theme.spacing.md,
+  },
+  forgotText: {
+    color: theme.colors.accent,
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  linkText: {
-    color: theme.colors.primary,
-    fontSize: 16,
+  footerText: {
+    color: theme.colors.textSecondary,
+    fontSize: 15,
+  },
+  footerLink: {
+    color: theme.colors.accent,
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

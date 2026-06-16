@@ -11,24 +11,27 @@ interface Props {
 export function SearchFilters({ filters, onChange }: Props) {
   return (
     <View style={styles.wrap}>
-      <TextInput
-        style={styles.search}
-        placeholder="Search listings..."
-        placeholderTextColor={theme.colors.textSecondary}
-        value={filters.search ?? ''}
-        onChangeText={(search) => onChange({ ...filters, search })}
-      />
-      <TextInput
-        style={styles.search}
-        placeholder="City filter"
-        placeholderTextColor={theme.colors.textSecondary}
-        value={filters.city ?? ''}
-        onChangeText={(city) => onChange({ ...filters, city })}
-      />
-      <View style={styles.priceRow}>
+      <View style={styles.searchRow}>
+        <TextInput
+          style={styles.search}
+          placeholder="Search listings..."
+          placeholderTextColor={theme.colors.textSecondary}
+          value={filters.search ?? ''}
+          onChangeText={(search) => onChange({ ...filters, search })}
+          returnKeyType="search"
+        />
+      </View>
+      <View style={styles.cityRow}>
+        <TextInput
+          style={[styles.search, styles.cityInput]}
+          placeholder="Location"
+          placeholderTextColor={theme.colors.textSecondary}
+          value={filters.city ?? ''}
+          onChangeText={(city) => onChange({ ...filters, city })}
+        />
         <TextInput
           style={[styles.search, styles.priceInput]}
-          placeholder="Min ₹"
+          placeholder="Min $"
           keyboardType="decimal-pad"
           placeholderTextColor={theme.colors.textSecondary}
           onChangeText={(v) => {
@@ -41,7 +44,7 @@ export function SearchFilters({ filters, onChange }: Props) {
         />
         <TextInput
           style={[styles.search, styles.priceInput]}
-          placeholder="Max ₹"
+          placeholder="Max $"
           keyboardType="decimal-pad"
           placeholderTextColor={theme.colors.textSecondary}
           onChangeText={(v) => {
@@ -53,7 +56,7 @@ export function SearchFilters({ filters, onChange }: Props) {
           }}
         />
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips} contentContainerStyle={styles.chipsContent}>
         <Chip
           label="All"
           active={!filters.category}
@@ -99,43 +102,59 @@ function Chip({
 const styles = StyleSheet.create({
   wrap: {
     paddingHorizontal: theme.spacing.md,
-    paddingBottom: theme.spacing.sm,
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.xs,
+    backgroundColor: theme.colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  searchRow: {
+    marginBottom: theme.spacing.sm,
+  },
+  cityRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
   },
   search: {
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: theme.radius.sm,
+    borderRadius: theme.radius.md,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: 10,
-    marginBottom: theme.spacing.sm,
-    fontSize: 16,
+    fontSize: 15,
     color: theme.colors.text,
   },
-  priceRow: {
-    flexDirection: 'row',
-    gap: theme.spacing.sm,
+  cityInput: {
+    flex: 2,
   },
   priceInput: {
     flex: 1,
   },
   chips: {
-    marginTop: theme.spacing.xs,
+    marginBottom: theme.spacing.xs,
+  },
+  chipsContent: {
+    gap: theme.spacing.sm,
+    paddingRight: theme.spacing.md,
   },
   chip: {
-    marginRight: theme.spacing.sm,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: theme.radius.full,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
     color: theme.colors.text,
+    fontSize: 14,
+    fontWeight: '500',
     overflow: 'hidden',
   },
   chipActive: {
     backgroundColor: theme.colors.primary,
     borderColor: theme.colors.primary,
-    color: '#fff',
+    color: theme.colors.textOnPrimary,
+    fontWeight: '700',
   },
 });

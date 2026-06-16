@@ -4,12 +4,12 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import { Button } from '@/components/Button';
 import { useAuth } from '@/context/AuthContext';
 import { fetchMessages, sendMessage, subscribeToMessages } from '@/lib/api/messages';
 import type { Message } from '@/lib/types';
@@ -75,9 +75,16 @@ export default function ChatScreen() {
           value={text}
           onChangeText={setText}
           placeholder="Message..."
+          placeholderTextColor={theme.colors.textSecondary}
           multiline
         />
-        <Button title="Send" onPress={onSend} loading={sending} style={styles.sendBtn} />
+        <Pressable
+          style={({ pressed }) => [styles.sendBtn, pressed && styles.sendBtnPressed, !text.trim() && styles.sendBtnDisabled]}
+          onPress={onSend}
+          disabled={sending || !text.trim()}
+        >
+          <Text style={styles.sendBtnText}>{sending ? '...' : 'Send'}</Text>
+        </Pressable>
       </View>
     </KeyboardAvoidingView>
   );
@@ -85,32 +92,57 @@ export default function ChatScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  list: { padding: theme.spacing.md, flexGrow: 1 },
+  list: { padding: theme.spacing.md, flexGrow: 1, gap: theme.spacing.sm },
   bubble: {
-    maxWidth: '80%',
-    padding: theme.spacing.md,
-    borderRadius: theme.radius.md,
-    marginBottom: theme.spacing.sm,
+    maxWidth: '78%',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: theme.radius.lg,
   },
-  mine: { alignSelf: 'flex-end', backgroundColor: theme.colors.primary },
-  theirs: { alignSelf: 'flex-start', backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border },
-  body: { color: theme.colors.text },
-  bodyMine: { color: '#fff' },
+  mine: {
+    alignSelf: 'flex-end',
+    backgroundColor: theme.colors.primary,
+    borderBottomRightRadius: theme.radius.sm,
+  },
+  theirs: {
+    alignSelf: 'flex-start',
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderBottomLeftRadius: theme.radius.sm,
+  },
+  body: { fontSize: 15, color: theme.colors.text, lineHeight: 22 },
+  bodyMine: { color: theme.colors.textOnPrimary },
   inputRow: {
     flexDirection: 'row',
+    alignItems: 'flex-end',
     padding: theme.spacing.sm,
     gap: theme.spacing.sm,
     borderTopWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
+    borderTopColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
   },
   input: {
     flex: 1,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: theme.colors.border,
-    borderRadius: theme.radius.sm,
-    padding: theme.spacing.sm,
+    borderRadius: theme.radius.lg,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     maxHeight: 100,
+    fontSize: 15,
+    color: theme.colors.text,
   },
-  sendBtn: { paddingHorizontal: 12 },
+  sendBtn: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: 11,
+    borderRadius: theme.radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 64,
+  },
+  sendBtnPressed: { opacity: 0.8 },
+  sendBtnDisabled: { opacity: 0.4 },
+  sendBtnText: { color: theme.colors.textOnPrimary, fontWeight: '700', fontSize: 15 },
 });

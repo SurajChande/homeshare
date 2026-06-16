@@ -42,7 +42,7 @@ export default function MyListingsScreen() {
   return (
     <View style={styles.container}>
       <Link href="/listing/new" asChild>
-        <Pressable style={styles.addBtn}>
+        <Pressable style={({ pressed }) => [styles.addBtn, pressed && styles.addBtnPressed]}>
           <Text style={styles.addText}>+ New listing</Text>
         </Pressable>
       </Link>
@@ -54,26 +54,29 @@ export default function MyListingsScreen() {
             <ListingCard listing={item} />
             <View style={styles.actions}>
               <Link href={`/listing/new?id=${item.id}`} asChild>
-                <Pressable>
-                  <Text style={styles.action}>Edit</Text>
+                <Pressable style={styles.actionBtn}>
+                  <Text style={styles.actionEdit}>Edit</Text>
                 </Pressable>
               </Link>
               {item.is_active ? (
-                <Pressable onPress={() => deactivate(item)}>
-                  <Text style={[styles.action, styles.danger]}>Deactivate</Text>
+                <Pressable style={styles.actionBtn} onPress={() => deactivate(item)}>
+                  <Text style={styles.actionDanger}>Deactivate</Text>
                 </Pressable>
               ) : (
-                <Text style={styles.inactive}>Inactive</Text>
+                <View style={styles.inactiveTag}>
+                  <Text style={styles.inactiveText}>Inactive</Text>
+                </View>
               )}
             </View>
           </View>
         )}
         ListEmptyComponent={
-          <EmptyState title="No listings yet" message="Tap + New listing to share an item." />
+          <EmptyState title="No listings yet" message="Tap + New listing to share an item with neighbours." />
         }
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
+            tintColor={theme.colors.primary}
             onRefresh={async () => {
               setRefreshing(true);
               await load();
@@ -91,15 +94,37 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   addBtn: {
     margin: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
     backgroundColor: theme.colors.primary,
     padding: theme.spacing.md,
-    borderRadius: theme.radius.sm,
+    borderRadius: theme.radius.md,
     alignItems: 'center',
   },
-  addText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  addBtnPressed: { opacity: 0.8 },
+  addText: { color: theme.colors.textOnPrimary, fontWeight: '700', fontSize: 16 },
   list: { paddingHorizontal: theme.spacing.md, flexGrow: 1 },
-  actions: { flexDirection: 'row', gap: 16, marginTop: -8, marginBottom: 16, paddingLeft: 4 },
-  action: { color: theme.colors.primary, fontWeight: '600' },
-  danger: { color: theme.colors.danger },
-  inactive: { color: theme.colors.textSecondary },
+  actions: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+    marginTop: -theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+    paddingHorizontal: theme.spacing.xs,
+    alignItems: 'center',
+  },
+  actionBtn: {
+    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.sm,
+    borderRadius: theme.radius.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  actionEdit: { color: theme.colors.accent, fontWeight: '600', fontSize: 13 },
+  actionDanger: { color: theme.colors.danger, fontWeight: '600', fontSize: 13 },
+  inactiveTag: {
+    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.sm,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.colors.surface,
+  },
+  inactiveText: { color: theme.colors.textSecondary, fontSize: 13 },
 });

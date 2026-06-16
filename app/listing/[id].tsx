@@ -35,7 +35,7 @@ export default function ListingDetailScreen() {
   if (!listing) {
     return (
       <View style={styles.centered}>
-        <Text>Loading...</Text>
+        <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
   }
@@ -78,77 +78,205 @@ export default function ListingDetailScreen() {
       {imageUri ? (
         <Image source={{ uri: imageUri }} style={styles.image} />
       ) : (
-        <View style={[styles.image, styles.placeholder]} />
-      )}
-      <Text style={styles.category}>{CATEGORY_LABEL[listing.category]}</Text>
-      <Text style={styles.title}>{listing.title}</Text>
-      <Text style={styles.price}>{formatCents(listing.daily_price_cents)}/day</Text>
-      {listing.deposit_cents > 0 && (
-        <Text style={styles.deposit}>Deposit: {formatCents(listing.deposit_cents)}</Text>
-      )}
-      <Text style={styles.city}>{listing.city}</Text>
-      <Text style={styles.desc}>{listing.description}</Text>
-      {!isOwner && (
-        <View style={styles.booking}>
-          <Text style={styles.section}>Request dates</Text>
-          <DateRangePicker
-            startDate={startDate}
-            endDate={endDate}
-            onChange={(s, e) => {
-              setStartDate(s);
-              setEndDate(e);
-            }}
-          />
-          <Text style={styles.total}>Total: {formatCents(total)}</Text>
-          <Button title="Request to rent" onPress={requestBooking} loading={loading} />
+        <View style={[styles.image, styles.placeholder]}>
+          <Text style={styles.placeholderText}>No photo</Text>
         </View>
       )}
+      <View style={styles.body}>
+        <Text style={styles.category}>{CATEGORY_LABEL[listing.category]}</Text>
+        <Text style={styles.title}>{listing.title}</Text>
+
+        <View style={styles.priceRow}>
+          <View style={styles.priceBadge}>
+            <Text style={styles.priceValue}>{formatCents(listing.daily_price_cents)}</Text>
+            <Text style={styles.priceUnit}>/day</Text>
+          </View>
+          {listing.deposit_cents > 0 && (
+            <Text style={styles.deposit}>+ {formatCents(listing.deposit_cents)} deposit</Text>
+          )}
+        </View>
+
+        {listing.city ? (
+          <View style={styles.locationRow}>
+            <Text style={styles.locationIcon}>📍</Text>
+            <Text style={styles.city}>{listing.city}</Text>
+          </View>
+        ) : null}
+
+        {listing.description ? (
+          <Text style={styles.desc}>{listing.description}</Text>
+        ) : null}
+
+        {listing.profiles?.display_name && (
+          <View style={styles.ownerRow}>
+            <View style={styles.ownerAvatar}>
+              <Text style={styles.ownerAvatarLetter}>
+                {listing.profiles.display_name.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <Text style={styles.ownerName}>Listed by {listing.profiles.display_name}</Text>
+          </View>
+        )}
+
+        {!isOwner && (
+          <View style={styles.bookingBox}>
+            <Text style={styles.bookingTitle}>Request rental dates</Text>
+            <DateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              onChange={(s, e) => {
+                setStartDate(s);
+                setEndDate(e);
+              }}
+            />
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Total estimate</Text>
+              <Text style={styles.totalValue}>{formatCents(total)}</Text>
+            </View>
+            <Button title="Request to rent" onPress={requestBooking} loading={loading} />
+          </View>
+        )}
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { paddingBottom: 40 },
+  content: { paddingBottom: theme.spacing.xxl },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  image: { width: '100%', height: 240, backgroundColor: theme.colors.primaryMuted },
-  placeholder: {},
+  loadingText: { color: theme.colors.textSecondary, fontSize: 16 },
+  image: {
+    width: '100%',
+    height: 260,
+    backgroundColor: theme.colors.surface,
+  },
+  placeholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  placeholderText: {
+    color: theme.colors.textSecondary,
+    fontSize: 14,
+  },
+  body: {
+    padding: theme.spacing.md,
+    gap: theme.spacing.sm,
+  },
   category: {
-    marginTop: theme.spacing.md,
-    marginHorizontal: theme.spacing.md,
-    color: theme.colors.primary,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
+    color: theme.colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   title: {
     fontSize: 24,
-    fontWeight: '700',
-    marginHorizontal: theme.spacing.md,
-    marginTop: 4,
+    fontWeight: '800',
     color: theme.colors.text,
+    lineHeight: 32,
+    letterSpacing: -0.3,
   },
-  price: {
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+    marginVertical: theme.spacing.xs,
+  },
+  priceBadge: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: theme.radius.md,
+    gap: 2,
+  },
+  priceValue: {
     fontSize: 20,
-    fontWeight: '700',
-    color: theme.colors.primary,
-    marginHorizontal: theme.spacing.md,
-    marginTop: 8,
+    fontWeight: '800',
+    color: theme.colors.textOnPrimary,
   },
-  deposit: { marginHorizontal: theme.spacing.md, color: theme.colors.textSecondary },
-  city: { marginHorizontal: theme.spacing.md, marginTop: 4, color: theme.colors.textSecondary },
+  priceUnit: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.textOnPrimary,
+  },
+  deposit: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+  },
+  locationIcon: { fontSize: 14 },
+  city: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+  },
   desc: {
-    margin: theme.spacing.md,
     fontSize: 16,
-    lineHeight: 24,
+    lineHeight: 26,
     color: theme.colors.text,
+    marginTop: theme.spacing.xs,
   },
-  booking: {
-    margin: theme.spacing.md,
+  ownerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    paddingVertical: theme.spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    marginTop: theme.spacing.xs,
+  },
+  ownerAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: theme.colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ownerAvatarLetter: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#A66E00',
+  },
+  ownerName: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+  },
+  bookingBox: {
+    marginTop: theme.spacing.md,
     padding: theme.spacing.md,
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.md,
+    borderRadius: theme.radius.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    gap: theme.spacing.md,
   },
-  section: { fontSize: 18, fontWeight: '600', marginBottom: theme.spacing.md },
-  total: { fontSize: 18, fontWeight: '700', marginVertical: theme.spacing.md },
+  bookingTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: theme.colors.text,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: theme.spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  totalLabel: {
+    fontSize: 16,
+    color: theme.colors.textSecondary,
+  },
+  totalValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: theme.colors.text,
+  },
 });
