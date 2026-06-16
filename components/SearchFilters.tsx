@@ -28,7 +28,7 @@ export function SearchFilters({ filters, onChange }: Props) {
       <View style={styles.priceRow}>
         <TextInput
           style={[styles.search, styles.priceInput]}
-          placeholder="Min $"
+          placeholder="Min ₹"
           keyboardType="decimal-pad"
           placeholderTextColor={theme.colors.textSecondary}
           onChangeText={(v) => {
@@ -41,7 +41,7 @@ export function SearchFilters({ filters, onChange }: Props) {
         />
         <TextInput
           style={[styles.search, styles.priceInput]}
-          placeholder="Max $"
+          placeholder="Max ₹"
           keyboardType="decimal-pad"
           placeholderTextColor={theme.colors.textSecondary}
           onChangeText={(v) => {
