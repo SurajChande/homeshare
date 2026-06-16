@@ -1,27 +1,27 @@
+import { Button } from '@/components/Button';
+import { useAuth } from '@/context/AuthContext';
+import {
+    createListing,
+    fetchListingById,
+    updateListing,
+    uploadListingImage,
+} from '@/lib/api/listings';
+import { LISTING_CATEGORIES } from '@/lib/constants';
+import { theme } from '@/lib/theme';
+import type { ListingCategory } from '@/lib/types';
+import { parsePriceToCents } from '@/lib/utils';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  Alert,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
-import { Button } from '@/components/Button';
-import { useAuth } from '@/context/AuthContext';
-import {
-  createListing,
-  fetchListingById,
-  updateListing,
-  uploadListingImage,
-} from '@/lib/api/listings';
-import { LISTING_CATEGORIES } from '@/lib/constants';
-import type { ListingCategory } from '@/lib/types';
-import { parsePriceToCents } from '@/lib/utils';
-import { theme } from '@/lib/theme';
 
 export default function NewListingScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -110,14 +110,16 @@ export default function NewListingScreen() {
       }
       router.back();
     } catch (e: unknown) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Could not save listing');
+      const errorMessage = e instanceof Error ? e.message : 'Could not save listing';
+      console.error('Save listing error:', e);
+      Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} scrollEnabled={true} bounces={true}>
       <TextInput style={styles.input} placeholder="Title" value={title} onChangeText={setTitle} />
       <TextInput
         style={[styles.input, styles.multiline]}
@@ -140,14 +142,14 @@ export default function NewListingScreen() {
       </View>
       <TextInput
         style={styles.input}
-        placeholder="Daily price ($)"
+        placeholder="Daily price (₹)"
         keyboardType="decimal-pad"
         value={dailyPrice}
         onChangeText={setDailyPrice}
       />
       <TextInput
         style={styles.input}
-        placeholder="Deposit ($, optional)"
+        placeholder="Deposit (₹, optional)"
         keyboardType="decimal-pad"
         value={deposit}
         onChangeText={setDeposit}
@@ -162,7 +164,7 @@ export default function NewListingScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { padding: theme.spacing.md },
+  content: { flexGrow: 1, padding: theme.spacing.md },
   input: {
     backgroundColor: theme.colors.surface,
     borderWidth: 1,

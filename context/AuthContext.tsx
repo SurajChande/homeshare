@@ -1,8 +1,8 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import type { Session, User } from '@supabase/supabase-js';
 import { ensureProfile } from '@/lib/api/profiles';
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/lib/types';
+import type { Session, User } from '@supabase/supabase-js';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 export type SignUpResult = {
   needsEmailConfirmation: boolean;
@@ -16,6 +16,7 @@ interface AuthContextValue {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<SignUpResult>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -101,6 +102,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await applySession(null);
   };
 
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: 'homeshare://reset-password-confirm',
+    });
+    if (error) throw error;
+  };
+
   const refreshProfile = async () => {
     if (session?.user) await loadProfile(session.user);
   };
@@ -115,6 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signUp,
         signOut,
+        resetPassword,
         refreshProfile,
       }}
     >

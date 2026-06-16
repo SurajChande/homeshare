@@ -1,5 +1,5 @@
-import { supabase, getPublicImageUrl } from '../supabase';
 import { STORAGE_BUCKET } from '../constants';
+import { getPublicImageUrl, supabase } from '../supabase';
 import type { Listing, ListingFilters } from '../types';
 
 export async function fetchListings(filters: ListingFilters = {}): Promise<Listing[]> {
@@ -104,11 +104,10 @@ export async function uploadListingImage(
 
   const response = await fetch(uri);
   const blob = await response.blob();
-  const arrayBuffer = await new Response(blob).arrayBuffer();
 
   const { error } = await supabase.storage
     .from(STORAGE_BUCKET)
-    .upload(path, arrayBuffer, { contentType: mimeType, upsert: false });
+    .upload(path, blob, { contentType: mimeType, upsert: false });
 
   if (error) throw error;
   return path;

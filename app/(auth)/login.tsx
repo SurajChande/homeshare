@@ -1,19 +1,18 @@
-import { Link } from 'expo-router';
-import { useState } from 'react';
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
 import { Button } from '@/components/Button';
 import { useAuth } from '@/context/AuthContext';
 import { getAuthErrorMessage } from '@/lib/auth-errors';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { theme } from '@/lib/theme';
+import { Link } from 'expo-router';
+import { useState } from 'react';
+import {
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput
+} from 'react-native';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
@@ -60,6 +59,9 @@ export default function LoginScreen() {
         onChangeText={setPassword}
       />
       <Button title="Log in" onPress={onLogin} loading={loading} />
+      <Link href="/(auth)/forgot-password" style={styles.link}>
+        <Text style={styles.linkText}>Forgot password?</Text>
+      </Link>
       <Link href="/(auth)/signup" style={styles.link}>
         <Text style={styles.linkText}>Create an account</Text>
       </Link>
