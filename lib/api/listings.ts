@@ -1,3 +1,5 @@
+import { decode } from 'base64-arraybuffer';
+import * as FileSystem from 'expo-file-system/legacy';
 import { STORAGE_BUCKET } from '../constants';
 import { getPublicImageUrl, supabase } from '../supabase';
 import type { Listing, ListingFilters } from '../types';
@@ -102,12 +104,13 @@ export async function uploadListingImage(
   const ext = mimeType.includes('png') ? 'png' : 'jpg';
   const path = `${ownerId}/${listingId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-  const response = await fetch(uri);
-  const blob = await response.blob();
+  const base64 = await FileSystem.readAsStringAsync(uri, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
 
   const { error } = await supabase.storage
     .from(STORAGE_BUCKET)
-    .upload(path, blob, { contentType: mimeType, upsert: false });
+    .upload(path, decode(base64), { contentType: mimeType, upsert: false });
 
   if (error) throw error;
   return path;
