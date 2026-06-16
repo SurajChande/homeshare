@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
@@ -6,6 +7,18 @@ import { useAuth } from '@/context/AuthContext';
 import { fetchConversationPreviews } from '@/lib/api/messages';
 import type { ConversationPreview } from '@/lib/types';
 import { theme } from '@/lib/theme';
+
+function formatTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return date.toLocaleDateString([], { weekday: 'short' });
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
 
 export default function MessagesScreen() {
   const { user } = useAuth();
@@ -53,19 +66,18 @@ export default function MessagesScreen() {
               </Text>
             </View>
             <View style={styles.content}>
-              <View style={styles.top}>
-                <Text style={styles.party} numberOfLines={1}>{item.other_party_name}</Text>
+              <View style={styles.topRow}>
+                <Text style={styles.name} numberOfLines={1}>{item.other_party_name}</Text>
                 {item.last_message_at && (
-                  <Text style={styles.time}>
-                    {new Date(item.last_message_at).toLocaleDateString()}
-                  </Text>
+                  <Text style={styles.time}>{formatTime(item.last_message_at)}</Text>
                 )}
               </View>
-              <Text style={styles.title} numberOfLines={1}>{item.listing_title}</Text>
+              <Text style={styles.listingTitle} numberOfLines={1}>{item.listing_title}</Text>
               <Text style={styles.preview} numberOfLines={1}>
                 {item.last_message ?? 'No messages yet'}
               </Text>
             </View>
+            <Ionicons name="chevron-forward" size={16} color={theme.colors.border} />
           </Pressable>
         </Link>
       )}
@@ -74,41 +86,79 @@ export default function MessagesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  list: { flexGrow: 1 },
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.surface,
+  },
+  list: {
+    flexGrow: 1,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    gap: theme.spacing.xs,
+  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    paddingVertical: 14,
+    borderRadius: theme.radius.lg,
     gap: theme.spacing.md,
     backgroundColor: theme.colors.background,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
-  cardPressed: { backgroundColor: theme.colors.surface },
+  cardPressed: {
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.primary,
+  },
   avatarCircle: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: theme.colors.primaryMuted,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.primary + '40',
   },
   avatarLetter: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '800',
     color: '#A66E00',
   },
-  content: { flex: 1 },
-  top: {
+  content: {
+    flex: 1,
+    minWidth: 0,
+  },
+  topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'baseline',
+    alignItems: 'center',
+    marginBottom: 3,
   },
-  party: { fontSize: 15, fontWeight: '700', color: theme.colors.text, flex: 1 },
-  time: { fontSize: 12, color: theme.colors.textSecondary, marginLeft: theme.spacing.sm },
-  title: { fontSize: 13, color: theme.colors.accent, marginTop: 1, fontWeight: '500' },
-  preview: { fontSize: 13, color: theme.colors.textSecondary, marginTop: 2 },
+  name: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: theme.colors.text,
+    flex: 1,
+    marginRight: theme.spacing.sm,
+  },
+  time: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    flexShrink: 0,
+  },
+  listingTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: theme.colors.accent,
+    marginBottom: 2,
+    letterSpacing: 0.1,
+  },
+  preview: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    lineHeight: 18,
+  },
 });
