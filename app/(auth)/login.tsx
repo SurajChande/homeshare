@@ -42,7 +42,7 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <Text style={styles.brand}>Homeshare</Text>
-      <Text style={styles.subtitle}>Rent household items from neighbors</Text>
+      <Text style={styles.subtitle}>Everything your neighborhood needs, in one app.</Text>
       <TextInput
         style={styles.input}
         placeholder="Email"

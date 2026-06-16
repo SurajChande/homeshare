@@ -1,4 +1,5 @@
 import { Button } from '@/components/Button';
+import { useAuth } from '@/context/AuthContext';
 import { getAuthErrorMessage } from '@/lib/auth-errors';
 import { supabase } from '@/lib/supabase';
 import { theme } from '@/lib/theme';
@@ -17,21 +18,37 @@ import {
 export default function ResetPasswordConfirmScreen() {
   const params = useLocalSearchParams<{ token_hash?: string; type?: string }>();
   const router = useRouter();
+  const { clearRecoveryMode } = useAuth();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [verified, setVerified] = useState(false);
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    // If no token_hash, redirect back to login
     if (!params.token_hash || params.type !== 'recovery') {
       Alert.alert(
         'Invalid link',
         'The password reset link is invalid or has expired.'
       );
       router.replace('/(auth)/login');
+      return;
     }
-  }, [params, router]);
+
+    supabase.auth
+      .verifyOtp({ token_hash: params.token_hash, type: 'recovery' })
+      .then(({ error }) => {
+        if (error) {
+          Alert.alert(
+            'Link expired',
+            'This password reset link has expired or already been used. Please request a new one.'
+          );
+          router.replace('/(auth)/login');
+        } else {
+          setVerified(true);
+        }
+      });
+  }, [params.token_hash, params.type, router]);
 
   const onResetPassword = async () => {
     if (!password.trim() || !confirmPassword.trim()) {
@@ -55,7 +72,9 @@ export default function ResetPasswordConfirmScreen() {
       if (error) throw error;
 
       setSuccess(true);
-      Alert.alert('Success', 'Your password has been reset.');
+      clearRecoveryMode();
+      await supabase.auth.signOut();
+      Alert.alert('Success', 'Your password has been reset. Please log in with your new password.');
       setTimeout(() => router.replace('/(auth)/login'), 2000);
     } catch (e: unknown) {
       Alert.alert('Error', getAuthErrorMessage(e));
@@ -70,9 +89,17 @@ export default function ResetPasswordConfirmScreen() {
         <View style={styles.successBox}>
           <Text style={styles.successText}>✓ Password reset successful!</Text>
           <Text style={styles.successSubtext}>
-            You can now log in with your new password.
+            Redirecting you to login...
           </Text>
         </View>
+      </KeyboardAvoidingView>
+    );
+  }
+
+  if (!verified) {
+    return (
+      <KeyboardAvoidingView style={styles.container}>
+        <Text style={styles.subtitle}>Verifying your reset link...</Text>
       </KeyboardAvoidingView>
     );
   }

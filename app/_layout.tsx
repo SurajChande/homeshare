@@ -14,7 +14,7 @@ export { ErrorBoundary } from 'expo-router';
 SplashScreen.preventAutoHideAsync();
 
 function AuthGate() {
-  const { session, loading } = useAuth();
+  const { session, loading, isRecoveryMode } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
@@ -24,10 +24,10 @@ function AuthGate() {
 
     if (!session && !inAuth) {
       router.replace('/(auth)/login');
-    } else if (session && inAuth) {
+    } else if (session && inAuth && !isRecoveryMode) {
       router.replace('/(tabs)');
     }
-  }, [session, loading, segments, router]);
+  }, [session, loading, segments, router, isRecoveryMode]);
 
   if (loading) {
     return (
