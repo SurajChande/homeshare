@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.homeshare.app"
+      "bundleIdentifier": "com.homeshare.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +22,10 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "package": "com.homeshare.app",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -54,6 +60,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6e94fa28-19c0-458e-bbc8-b3d6fe739b86"
+      }
     }
   }
 }
