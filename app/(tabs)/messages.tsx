@@ -1,6 +1,6 @@
 import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { EmptyState } from '@/components/EmptyState';
 import { useAuth } from '@/context/AuthContext';
 import { fetchConversationPreviews } from '@/lib/api/messages';
@@ -31,11 +31,12 @@ export default function MessagesScreen() {
       keyExtractor={(item) => item.booking_id}
       contentContainerStyle={styles.list}
       ListEmptyComponent={
-        <EmptyState title="No messages" message="Messages appear after you have a booking." />
+        <EmptyState title="No messages" message="Messages appear once you have an active booking." />
       }
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
+          tintColor={theme.colors.primary}
           onRefresh={async () => {
             setRefreshing(true);
             await load();
@@ -45,12 +46,26 @@ export default function MessagesScreen() {
       }
       renderItem={({ item }) => (
         <Link href={`/chat/${item.booking_id}`} asChild>
-          <Pressable style={styles.card}>
-            <Text style={styles.title}>{item.listing_title}</Text>
-            <Text style={styles.party}>{item.other_party_name}</Text>
-            <Text style={styles.preview} numberOfLines={1}>
-              {item.last_message ?? 'No messages yet'}
-            </Text>
+          <Pressable style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
+            <View style={styles.avatarCircle}>
+              <Text style={styles.avatarLetter}>
+                {item.other_party_name?.charAt(0).toUpperCase() ?? '?'}
+              </Text>
+            </View>
+            <View style={styles.content}>
+              <View style={styles.top}>
+                <Text style={styles.party} numberOfLines={1}>{item.other_party_name}</Text>
+                {item.last_message_at && (
+                  <Text style={styles.time}>
+                    {new Date(item.last_message_at).toLocaleDateString()}
+                  </Text>
+                )}
+              </View>
+              <Text style={styles.title} numberOfLines={1}>{item.listing_title}</Text>
+              <Text style={styles.preview} numberOfLines={1}>
+                {item.last_message ?? 'No messages yet'}
+              </Text>
+            </View>
           </Pressable>
         </Link>
       )}
@@ -60,16 +75,40 @@ export default function MessagesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  list: { padding: theme.spacing.md, flexGrow: 1 },
+  list: { flexGrow: 1 },
   card: {
-    backgroundColor: theme.colors.surface,
-    padding: theme.spacing.md,
-    borderRadius: theme.radius.md,
-    marginBottom: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    gap: theme.spacing.md,
+    backgroundColor: theme.colors.background,
   },
-  title: { fontSize: 16, fontWeight: '600', color: theme.colors.text },
-  party: { fontSize: 14, color: theme.colors.textSecondary, marginTop: 2 },
-  preview: { marginTop: 6, color: theme.colors.textSecondary },
+  cardPressed: { backgroundColor: theme.colors.surface },
+  avatarCircle: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: theme.colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  avatarLetter: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#A66E00',
+  },
+  content: { flex: 1 },
+  top: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+  },
+  party: { fontSize: 15, fontWeight: '700', color: theme.colors.text, flex: 1 },
+  time: { fontSize: 12, color: theme.colors.textSecondary, marginLeft: theme.spacing.sm },
+  title: { fontSize: 13, color: theme.colors.accent, marginTop: 1, fontWeight: '500' },
+  preview: { fontSize: 13, color: theme.colors.textSecondary, marginTop: 2 },
 });

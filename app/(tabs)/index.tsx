@@ -47,7 +47,7 @@ export default function BrowseScreen() {
     () => (
       <EmptyState
         title={loading ? 'Loading...' : 'No listings found'}
-        message="Try adjusting filters or list your first item."
+        message="Try adjusting your filters, or list your first item."
       />
     ),
     [loading]
@@ -62,7 +62,13 @@ export default function BrowseScreen() {
         renderItem={({ item }) => <ListingCard listing={item} />}
         contentContainerStyle={styles.list}
         ListEmptyComponent={listEmpty}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.colors.primary}
+          />
+        }
       />
     </View>
   );

@@ -1,10 +1,10 @@
 import { Button } from '@/components/Button';
 import { useAuth } from '@/context/AuthContext';
 import {
-    createListing,
-    fetchListingById,
-    updateListing,
-    uploadListingImage,
+  createListing,
+  fetchListingById,
+  updateListing,
+  uploadListingImage,
 } from '@/lib/api/listings';
 import { LISTING_CATEGORIES } from '@/lib/constants';
 import { theme } from '@/lib/theme';
@@ -14,13 +14,14 @@ import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    Alert,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
 
 export default function NewListingScreen() {
@@ -119,72 +120,154 @@ export default function NewListingScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content} scrollEnabled={true} bounces={true}>
-      <TextInput style={styles.input} placeholder="Title" value={title} onChangeText={setTitle} />
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      scrollEnabled
+      bounces
+    >
+      <Text style={styles.sectionTitle}>Basic details</Text>
+      <Text style={styles.fieldLabel}>Title</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="e.g. KitchenAid stand mixer"
+        placeholderTextColor={theme.colors.textSecondary}
+        value={title}
+        onChangeText={setTitle}
+      />
+      <Text style={styles.fieldLabel}>Description</Text>
       <TextInput
         style={[styles.input, styles.multiline]}
-        placeholder="Description"
+        placeholder="Describe the item, its condition, and any requirements..."
+        placeholderTextColor={theme.colors.textSecondary}
         multiline
         value={description}
         onChangeText={setDescription}
       />
-      <Text style={styles.label}>Category</Text>
+
+      <Text style={styles.sectionTitle}>Category</Text>
       <View style={styles.categories}>
         {LISTING_CATEGORIES.map((c) => (
-          <Text
+          <Pressable
             key={c.value}
             onPress={() => setCategory(c.value)}
             style={[styles.chip, category === c.value && styles.chipActive]}
           >
-            {c.label}
-          </Text>
+            <Text style={[styles.chipText, category === c.value && styles.chipTextActive]}>
+              {c.label}
+            </Text>
+          </Pressable>
         ))}
       </View>
+
+      <Text style={styles.sectionTitle}>Pricing</Text>
+      <Text style={styles.fieldLabel}>Daily price ($)</Text>
       <TextInput
         style={styles.input}
-        placeholder="Daily price (₹)"
+        placeholder="0.00"
+        placeholderTextColor={theme.colors.textSecondary}
         keyboardType="decimal-pad"
         value={dailyPrice}
         onChangeText={setDailyPrice}
       />
+      <Text style={styles.fieldLabel}>Security deposit ($, optional)</Text>
       <TextInput
         style={styles.input}
-        placeholder="Deposit (₹, optional)"
+        placeholder="0.00"
+        placeholderTextColor={theme.colors.textSecondary}
         keyboardType="decimal-pad"
         value={deposit}
         onChangeText={setDeposit}
       />
-      <TextInput style={styles.input} placeholder="City" value={city} onChangeText={setCity} />
-      <Button title="Add photo" variant="secondary" onPress={pickImage} />
-      {imageUri ? <Image source={{ uri: imageUri }} style={styles.preview} /> : null}
-      <Button title={isEdit ? 'Save changes' : 'Create listing'} onPress={save} loading={loading} />
+
+      <Text style={styles.sectionTitle}>Location</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="City or suburb"
+        placeholderTextColor={theme.colors.textSecondary}
+        value={city}
+        onChangeText={setCity}
+      />
+
+      <Text style={styles.sectionTitle}>Photo</Text>
+      <Button title="Choose from library" variant="secondary" onPress={pickImage} />
+      {imageUri ? (
+        <Image source={{ uri: imageUri }} style={styles.preview} />
+      ) : null}
+
+      <View style={styles.submitRow}>
+        <Button
+          title={isEdit ? 'Save changes' : 'Create listing'}
+          onPress={save}
+          loading={loading}
+        />
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { flexGrow: 1, padding: theme.spacing.md },
+  content: { padding: theme.spacing.md, paddingBottom: theme.spacing.xxl },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
+    marginTop: theme.spacing.md,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
+  },
   input: {
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
+    backgroundColor: theme.colors.background,
+    borderWidth: 1.5,
     borderColor: theme.colors.border,
-    borderRadius: theme.radius.sm,
-    padding: theme.spacing.md,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: 13,
     marginBottom: theme.spacing.md,
     fontSize: 16,
+    color: theme.colors.text,
   },
-  multiline: { minHeight: 100, textAlignVertical: 'top' },
-  label: { fontWeight: '600', marginBottom: theme.spacing.sm },
-  categories: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: theme.spacing.md },
+  multiline: { minHeight: 110, textAlignVertical: 'top', paddingTop: 13 },
+  categories: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+  },
   chip: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: theme.radius.full,
+    borderWidth: 1.5,
     borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.background,
   },
-  chipActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary, color: '#fff' },
-  preview: { width: '100%', height: 180, borderRadius: theme.radius.sm, marginVertical: theme.spacing.md },
+  chipActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  chipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.text,
+  },
+  chipTextActive: {
+    color: theme.colors.textOnPrimary,
+  },
+  preview: {
+    width: '100%',
+    height: 200,
+    borderRadius: theme.radius.md,
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+  },
+  submitRow: {
+    marginTop: theme.spacing.lg,
+  },
 });

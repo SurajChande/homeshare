@@ -20,6 +20,7 @@ export interface Profile {
   display_name: string;
   avatar_url: string | null;
   city: string | null;
+  is_admin: boolean;
   created_at: string;
 }
 
