@@ -41,46 +41,30 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.header}>
-        <View style={styles.logoBadge}>
-          <Text style={styles.logoLetter}>H</Text>
-        </View>
-        <Text style={styles.brand}>Homeshare</Text>
-        <Text style={styles.subtitle}>Rent household items from your neighbours</Text>
-      </View>
-
-      <View style={styles.form}>
-        <Text style={styles.fieldLabel}>Email</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="you@example.com"
-          placeholderTextColor={theme.colors.textSecondary}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-        />
-        <Text style={styles.fieldLabel}>Password</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="••••••••"
-          placeholderTextColor={theme.colors.textSecondary}
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-        <Button title="Log in" onPress={onLogin} loading={loading} style={styles.loginBtn} />
-        <Link href="/(auth)/forgot-password" style={styles.forgotLink}>
-          <Text style={styles.forgotText}>Forgot your password?</Text>
-        </Link>
-      </View>
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>New to Homeshare? </Text>
-        <Link href="/(auth)/signup">
-          <Text style={styles.footerLink}>Create an account</Text>
-        </Link>
-      </View>
+      <Text style={styles.brand}>Homeshare</Text>
+      <Text style={styles.subtitle}>Everything your neighborhood needs, in one app.</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        autoCapitalize="none"
+        keyboardType="email-address"
+        value={email}
+        onChangeText={setEmail}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Password"
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+      />
+      <Button title="Log in" onPress={onLogin} loading={loading} />
+      <Link href="/(auth)/forgot-password" style={styles.link}>
+        <Text style={styles.linkText}>Forgot password?</Text>
+      </Link>
+      <Link href="/(auth)/signup" style={styles.link}>
+        <Text style={styles.linkText}>Create an account</Text>
+      </Link>
     </KeyboardAvoidingView>
   );
 }
