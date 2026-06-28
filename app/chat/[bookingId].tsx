@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -89,6 +90,9 @@ export default function ChatScreen() {
       const msg = await sendMessage(bookingId, user.id, content);
       appendMessage(msg);
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+    } catch {
+      setText(content);
+      Alert.alert('Failed to send', 'Your message could not be sent. Please try again.');
     } finally {
       setSending(false);
     }
