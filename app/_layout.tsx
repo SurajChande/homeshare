@@ -42,8 +42,8 @@ function AuthGate() {
       screenOptions={{
         headerShown: false,
         headerStyle: { backgroundColor: theme.colors.background },
-        headerTintColor: theme.colors.accent,
-        headerTitleStyle: { color: theme.colors.text, fontWeight: '700', fontSize: 17 },
+        headerTintColor: theme.colors.primary,
+        headerTitleStyle: { color: theme.colors.text, fontWeight: '700', fontSize: 17, letterSpacing: -0.2 },
         headerShadowVisible: false,
         headerBackTitle: 'Back',
       }}

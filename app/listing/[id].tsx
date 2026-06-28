@@ -1,27 +1,33 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   Alert,
   Image,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/Button';
+import { Badge } from '@/components/Badge';
+import { Avatar } from '@/components/Avatar';
 import { DateRangePicker } from '@/components/DateRangePicker';
+import { Skeleton } from '@/components/LoadingSkeleton';
 import { useAuth } from '@/context/AuthContext';
 import { createBooking } from '@/lib/api/bookings';
 import { fetchListingById, listingImageUrl } from '@/lib/api/listings';
 import { CATEGORY_LABEL } from '@/lib/constants';
 import type { Listing } from '@/lib/types';
 import { computeTotalCents, formatCents, toDateString } from '@/lib/utils';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/lib/useTheme';
 
 export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
   const router = useRouter();
+  const { colors, radius, shadow, spacing } = useTheme();
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(false);
   const today = toDateString(new Date());
@@ -34,9 +40,16 @@ export default function ListingDetailScreen() {
 
   if (!listing) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.loadingText}>Loading...</Text>
-      </View>
+      <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+        <Skeleton height={260} borderRadius={0} />
+        <View style={[styles.body, { paddingHorizontal: spacing.md }]}>
+          <Skeleton width="40%" height={12} borderRadius={6} style={{ marginTop: 16 }} />
+          <Skeleton width="80%" height={28} borderRadius={8} style={{ marginTop: 12 }} />
+          <Skeleton width="50%" height={40} borderRadius={20} style={{ marginTop: 16 }} />
+          <Skeleton width="90%" height={16} borderRadius={6} style={{ marginTop: 20 }} />
+          <Skeleton width="75%" height={16} borderRadius={6} style={{ marginTop: 8 }} />
+        </View>
+      </ScrollView>
     );
   }
 
@@ -74,53 +87,96 @@ export default function ListingDetailScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Hero image */}
       {imageUri ? (
         <Image source={{ uri: imageUri }} style={styles.image} />
       ) : (
-        <View style={[styles.image, styles.placeholder]}>
-          <Text style={styles.placeholderText}>No photo</Text>
+        <View style={[styles.image, styles.placeholder, { backgroundColor: colors.surfaceSubtle }]}>
+          <Ionicons name="image-outline" size={40} color={colors.textTertiary} />
         </View>
       )}
-      <View style={styles.body}>
-        <Text style={styles.category}>{CATEGORY_LABEL[listing.category]}</Text>
-        <Text style={styles.title}>{listing.title}</Text>
 
+      <View style={[styles.body, { paddingHorizontal: spacing.md }]}>
+        {/* Category + inactive badge */}
+        <View style={styles.topRow}>
+          <Text style={[styles.category, { color: colors.textSecondary }]}>
+            {CATEGORY_LABEL[listing.category]}
+          </Text>
+          {!listing.is_active && <Badge label="Inactive" variant="neutral" size="sm" />}
+        </View>
+
+        {/* Title */}
+        <Text style={[styles.title, { color: colors.text }]}>{listing.title}</Text>
+
+        {/* Price */}
         <View style={styles.priceRow}>
-          <View style={styles.priceBadge}>
-            <Text style={styles.priceValue}>{formatCents(listing.daily_price_cents)}</Text>
-            <Text style={styles.priceUnit}>/day</Text>
+          <View style={[styles.pricePill, { backgroundColor: colors.primaryMuted }]}>
+            <Text style={[styles.priceValue, { color: colors.primary }]}>
+              {formatCents(listing.daily_price_cents)}
+            </Text>
+            <Text style={[styles.priceUnit, { color: colors.primary }]}>/day</Text>
           </View>
           {listing.deposit_cents > 0 && (
-            <Text style={styles.deposit}>+ {formatCents(listing.deposit_cents)} deposit</Text>
+            <Text style={[styles.deposit, { color: colors.textSecondary }]}>
+              + {formatCents(listing.deposit_cents)} deposit
+            </Text>
           )}
         </View>
 
+        {/* Location */}
         {listing.city ? (
           <View style={styles.locationRow}>
-            <Text style={styles.locationIcon}>📍</Text>
-            <Text style={styles.city}>{listing.city}</Text>
+            <Ionicons name="location-outline" size={15} color={colors.textSecondary} />
+            <Text style={[styles.city, { color: colors.textSecondary }]}>{listing.city}</Text>
           </View>
         ) : null}
 
+        {/* Description */}
         {listing.description ? (
-          <Text style={styles.desc}>{listing.description}</Text>
+          <Text style={[styles.desc, { color: colors.text }]}>{listing.description}</Text>
         ) : null}
 
+        {/* Owner */}
         {listing.profiles?.display_name && (
-          <View style={styles.ownerRow}>
-            <View style={styles.ownerAvatar}>
-              <Text style={styles.ownerAvatarLetter}>
-                {listing.profiles.display_name.charAt(0).toUpperCase()}
+          <View
+            style={[
+              styles.ownerCard,
+              {
+                backgroundColor: colors.surface,
+                borderRadius: radius.md,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <Avatar name={listing.profiles.display_name} size={40} />
+            <View>
+              <Text style={[styles.ownerLabel, { color: colors.textSecondary }]}>Listed by</Text>
+              <Text style={[styles.ownerName, { color: colors.text }]}>
+                {listing.profiles.display_name}
               </Text>
             </View>
-            <Text style={styles.ownerName}>Listed by {listing.profiles.display_name}</Text>
           </View>
         )}
 
+        {/* Booking panel */}
         {!isOwner && (
-          <View style={styles.bookingBox}>
-            <Text style={styles.bookingTitle}>Request rental dates</Text>
+          <View
+            style={[
+              styles.bookingBox,
+              {
+                backgroundColor: colors.surface,
+                borderRadius: radius.lg,
+                borderColor: colors.border,
+              },
+              shadow.md,
+            ]}
+          >
+            <Text style={[styles.bookingTitle, { color: colors.text }]}>Request rental dates</Text>
             <DateRangePicker
               startDate={startDate}
               endDate={endDate}
@@ -129,9 +185,9 @@ export default function ListingDetailScreen() {
                 setEndDate(e);
               }}
             />
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total estimate</Text>
-              <Text style={styles.totalValue}>{formatCents(total)}</Text>
+            <View style={[styles.totalRow, { borderTopColor: colors.border }]}>
+              <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>Total estimate</Text>
+              <Text style={[styles.totalValue, { color: colors.text }]}>{formatCents(total)}</Text>
             </View>
             <Button title="Request to rent" onPress={requestBooking} loading={loading} />
           </View>
@@ -142,141 +198,113 @@ export default function ListingDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { paddingBottom: theme.spacing.xxl },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  loadingText: { color: theme.colors.textSecondary, fontSize: 16 },
+  container: { flex: 1 },
+  content: { paddingBottom: 48 },
   image: {
     width: '100%',
-    height: 260,
-    backgroundColor: theme.colors.surface,
+    height: 280,
   },
   placeholder: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  placeholderText: {
-    color: theme.colors.textSecondary,
-    fontSize: 14,
-  },
   body: {
-    padding: theme.spacing.md,
-    gap: theme.spacing.sm,
+    paddingTop: 20,
+    gap: 14,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   category: {
     fontSize: 11,
     fontWeight: '700',
-    color: theme.colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '800',
-    color: theme.colors.text,
-    lineHeight: 32,
-    letterSpacing: -0.3,
+    lineHeight: 33,
+    letterSpacing: -0.4,
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.md,
-    marginVertical: theme.spacing.xs,
+    gap: 12,
   },
-  priceBadge: {
+  pricePill: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: theme.radius.md,
+    borderRadius: 999,
     gap: 2,
   },
   priceValue: {
     fontSize: 20,
     fontWeight: '800',
-    color: theme.colors.textOnPrimary,
   },
   priceUnit: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.colors.textOnPrimary,
   },
   deposit: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.xs,
+    gap: 5,
   },
-  locationIcon: { fontSize: 14 },
   city: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    fontWeight: '500',
   },
   desc: {
     fontSize: 16,
     lineHeight: 26,
-    color: theme.colors.text,
-    marginTop: theme.spacing.xs,
   },
-  ownerRow: {
+  ownerCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.sm,
-    paddingVertical: theme.spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-    marginTop: theme.spacing.xs,
+    gap: 12,
+    padding: 12,
+    borderWidth: 1,
   },
-  ownerAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: theme.colors.primaryMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ownerAvatarLetter: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#A66E00',
+  ownerLabel: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   ownerName: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
+    fontSize: 15,
+    fontWeight: '700',
   },
   bookingBox: {
-    marginTop: theme.spacing.md,
-    padding: theme.spacing.md,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.lg,
+    marginTop: 8,
+    padding: 20,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    gap: theme.spacing.md,
+    gap: 16,
   },
   bookingTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
-    color: theme.colors.text,
+    letterSpacing: -0.2,
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: theme.spacing.sm,
+    paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
   },
   totalLabel: {
-    fontSize: 16,
-    color: theme.colors.textSecondary,
+    fontSize: 15,
   },
   totalValue: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '800',
-    color: theme.colors.text,
+    letterSpacing: -0.3,
   },
 });

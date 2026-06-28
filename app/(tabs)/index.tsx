@@ -1,11 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import {
+  FlatList,
+  RefreshControl,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { EmptyState } from '@/components/EmptyState';
 import { ListingCard } from '@/components/ListingCard';
+import { ListingCardSkeleton } from '@/components/LoadingSkeleton';
 import { SearchFilters } from '@/components/SearchFilters';
+import { FLOATING_TAB_BAR_HEIGHT } from '@/components/FloatingTabBar';
+import { useAuth } from '@/context/AuthContext';
 import { fetchListings } from '@/lib/api/listings';
 import type { Listing, ListingFilters as Filters } from '@/lib/types';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/lib/useTheme';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -16,7 +26,16 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced;
 }
 
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
 export default function BrowseScreen() {
+  const { profile } = useAuth();
+  const { colors } = useTheme();
   const [filters, setFilters] = useState<Filters>({});
   const debouncedFilters = useDebounce(filters, 400);
   const [listings, setListings] = useState<Listing[]>([]);
@@ -43,44 +62,90 @@ export default function BrowseScreen() {
     setRefreshing(false);
   };
 
-  const listEmpty = useMemo(
+  const greeting = getGreeting();
+  const name = profile?.display_name?.split(' ')[0];
+
+  const ListHeader = useMemo(
     () => (
-      <EmptyState
-        title={loading ? 'Loading...' : 'No listings found'}
-        message="Try adjusting your filters, or list your first item."
-      />
+      <View style={styles.header}>
+        <View style={styles.greeting}>
+          <Text style={[styles.greetingText, { color: colors.textSecondary }]}>{greeting}</Text>
+          <Text style={[styles.greetingName, { color: colors.text }]}>
+            {name ? `${name} 👋` : 'Welcome'}
+          </Text>
+        </View>
+        <SearchFilters filters={filters} onChange={setFilters} />
+      </View>
     ),
+    [greeting, name, colors, filters]
+  );
+
+  const listEmpty = useMemo(
+    () =>
+      loading ? (
+        <View style={styles.skeletons}>
+          {[0, 1, 2].map((i) => <ListingCardSkeleton key={i} />)}
+        </View>
+      ) : (
+        <EmptyState
+          title="No listings found"
+          message="Try adjusting your filters, or be the first to share something!"
+          icon="search"
+        />
+      ),
     [loading]
   );
 
   return (
-    <View style={styles.container}>
-      <SearchFilters filters={filters} onChange={setFilters} />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <FlatList
         data={listings}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <ListingCard listing={item} />}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[
+          styles.list,
+          { paddingBottom: FLOATING_TAB_BAR_HEIGHT + 32 },
+        ]}
+        ListHeaderComponent={ListHeader}
         ListEmptyComponent={listEmpty}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={theme.colors.primary}
+            tintColor={colors.primary}
           />
         }
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
+  safe: { flex: 1 },
+  header: {
+    marginBottom: 8,
+  },
+  greeting: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 20,
+    gap: 2,
+  },
+  greetingText: {
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  greetingName: {
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
   list: {
-    padding: theme.spacing.md,
+    paddingHorizontal: 16,
     flexGrow: 1,
+  },
+  skeletons: {
+    gap: 0,
   },
 });

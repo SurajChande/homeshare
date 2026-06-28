@@ -1,20 +1,62 @@
-import { StyleSheet, Text, View } from 'react-native';
-import { theme } from '@/lib/theme';
+import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Button } from '@/components/Button';
+import { useTheme } from '@/lib/useTheme';
+
+type IoniconName = keyof typeof Ionicons.glyphMap;
+
+interface EmptyStateProps {
+  title: string;
+  message?: string;
+  icon?: IoniconName;
+  actionLabel?: string;
+  onAction?: () => void;
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
+  style?: StyleProp<ViewStyle>;
+}
 
 export function EmptyState({
   title,
   message,
-}: {
-  title: string;
-  message?: string;
-}) {
+  icon = 'file-tray',
+  actionLabel,
+  onAction,
+  secondaryActionLabel,
+  onSecondaryAction,
+  style,
+}: EmptyStateProps) {
+  const { colors, radius } = useTheme();
+
   return (
-    <View style={styles.container}>
-      <View style={styles.iconCircle}>
-        <Text style={styles.icon}>○</Text>
+    <View style={[styles.container, style]}>
+      <View
+        style={[
+          styles.iconCircle,
+          { backgroundColor: colors.primaryMuted, borderRadius: radius.lg },
+        ]}
+      >
+        <Ionicons name={icon} size={32} color={colors.primary} />
       </View>
-      <Text style={styles.title}>{title}</Text>
-      {message ? <Text style={styles.message}>{message}</Text> : null}
+      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+      {message ? (
+        <Text style={[styles.message, { color: colors.textSecondary }]}>{message}</Text>
+      ) : null}
+      {actionLabel && onAction ? (
+        <Button
+          title={actionLabel}
+          onPress={onAction}
+          style={styles.action}
+        />
+      ) : null}
+      {secondaryActionLabel && onSecondaryAction ? (
+        <Button
+          title={secondaryActionLabel}
+          variant="ghost"
+          onPress={onSecondaryAction}
+          style={styles.secondaryAction}
+        />
+      ) : null}
     </View>
   );
 }
@@ -24,32 +66,34 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: theme.spacing.xl,
-    gap: theme.spacing.sm,
+    paddingHorizontal: 40,
+    paddingVertical: 48,
+    gap: 12,
   },
   iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: theme.colors.surface,
+    width: 72,
+    height: 72,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  icon: {
-    fontSize: 28,
-    color: theme.colors.textSecondary,
+    marginBottom: 8,
   },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
-    color: theme.colors.text,
     textAlign: 'center',
+    letterSpacing: -0.2,
   },
   message: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
+    fontSize: 15,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 22,
+  },
+  action: {
+    marginTop: 8,
+    paddingHorizontal: 32,
+    alignSelf: 'center',
+  },
+  secondaryAction: {
+    marginTop: 2,
   },
 });

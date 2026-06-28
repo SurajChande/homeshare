@@ -1,155 +1,362 @@
-import { Button } from '@/components/Button';
-import { useAuth } from '@/context/AuthContext';
-import { getAuthErrorMessage } from '@/lib/auth-errors';
-import { isSupabaseConfigured } from '@/lib/supabase';
-import { theme } from '@/lib/theme';
-import { Link } from 'expo-router';
-import { useState } from 'react';
+/**
+ * Cinematic login landing screen.
+ *
+ * Background video: replace LOGIN_VIDEO_SOURCE with
+ *   require('@/assets/videos/login-bg.mp4')
+ * once you have dropped your video file into assets/videos/.
+ */
+
+import { useCallback, useEffect } from 'react';
 import {
-  Alert,
-  KeyboardAvoidingView,
   Platform,
+  Pressable,
+  SafeAreaView,
   StyleSheet,
   Text,
-  TextInput,
   View,
+  Alert,
 } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
+} from 'react-native-reanimated';
 
-export default function LoginScreen() {
-  const { signIn } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+// ─── Video source ────────────────────────────────────────────────────────────
+// To use a local file instead: require('@/assets/videos/login-bg.mp4')
+const LOGIN_VIDEO_SOURCE = require('@/assets/videos/login-bg.mp4');
 
-  const onLogin = async () => {
-    if (!isSupabaseConfigured) {
-      Alert.alert('Setup required', 'Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to .env');
-      return;
-    }
-    setLoading(true);
-    try {
-      await signIn(email.trim(), password);
-    } catch (e: unknown) {
-      Alert.alert('Login failed', getAuthErrorMessage(e));
-    } finally {
-      setLoading(false);
-    }
-  };
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+function LoginBackgroundVideo() {
+  const player = useVideoPlayer(LOGIN_VIDEO_SOURCE, (p) => {
+    p.loop = true;
+    p.muted = true;
+    p.play();
+  });
+
+  useFocusEffect(
+    useCallback(() => {
+      player.play();
+      return () => {
+        player.pause();
+      };
+    }, [player])
+  );
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <Text style={styles.brand}>Homeshare</Text>
-      <Text style={styles.subtitle}>Everything your neighborhood needs, in one app.</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      <VideoView
+        style={StyleSheet.absoluteFill}
+        player={player}
+        contentFit="cover"
+        nativeControls={false}
+        allowsPictureInPicture={false}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-      <Button title="Log in" onPress={onLogin} loading={loading} />
-      <Link href="/(auth)/forgot-password" style={styles.link}>
-        <Text style={styles.linkText}>Forgot password?</Text>
-      </Link>
-      <Link href="/(auth)/signup" style={styles.link}>
-        <Text style={styles.linkText}>Create an account</Text>
-      </Link>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
+function GradientOverlay() {
+  return (
+    <LinearGradient
+      colors={['rgba(0,0,0,0.05)', 'rgba(0,0,0,0.38)', 'rgba(0,0,0,0.84)']}
+      locations={[0, 0.42, 1]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={StyleSheet.absoluteFill}
+      pointerEvents="none"
+    />
+  );
+}
+
+interface AnimProps {
+  opacity: ReturnType<typeof useSharedValue<number>>;
+  translateY: ReturnType<typeof useSharedValue<number>>;
+}
+
+function LoginHero({ opacity, translateY }: AnimProps) {
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  return (
+    <Animated.View style={[styles.hero, animStyle]}>
+      <View style={styles.logoWrap}>
+        <Ionicons name="home" size={26} color="#FFFFFF" />
+      </View>
+
+      <Text style={styles.wordmark}>homeshare</Text>
+
+      <Text style={styles.headline}>
+        Find your people.{'\n'}Find your home.
+      </Text>
+
+      <Text style={styles.subtitle}>
+        Share homes. Split costs.{'\n'}Build meaningful connections.
+      </Text>
+    </Animated.View>
+  );
+}
+
+function AuthButtons({ opacity, translateY }: AnimProps) {
+  const router = useRouter();
+
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  const handleGoogleSignIn = () => {
+    Alert.alert('Coming soon', 'Google Sign-In will be available in a future update.');
+  };
+
+  const handleAppleSignIn = () => {
+    Alert.alert('Coming soon', 'Apple Sign-In will be available in a future update.');
+  };
+
+  return (
+    <Animated.View style={[styles.authCard, animStyle]}>
+      {/* Google */}
+      <Pressable
+        onPress={handleGoogleSignIn}
+        style={({ pressed }) =>
+          StyleSheet.flatten([styles.btn, styles.btnGoogle, pressed && styles.btnPressed])
+        }
+        accessibilityRole="button"
+        accessibilityLabel="Continue with Google"
+      >
+        <Ionicons name="logo-google" size={19} color="#1F1F1F" />
+        <Text style={styles.btnGoogleText}>Continue with Google</Text>
+      </Pressable>
+
+      {/* Apple — iOS only */}
+      {Platform.OS === 'ios' && (
+        <Pressable
+          onPress={handleAppleSignIn}
+          style={({ pressed }) =>
+            StyleSheet.flatten([styles.btn, styles.btnApple, pressed && styles.btnPressed])
+          }
+          accessibilityRole="button"
+          accessibilityLabel="Continue with Apple"
+        >
+          <Ionicons name="logo-apple" size={19} color="#FFFFFF" />
+          <Text style={styles.btnAppleText}>Continue with Apple</Text>
+        </Pressable>
+      )}
+
+      {/* OR divider */}
+      <View style={styles.divider}>
+        <View style={styles.dividerLine} />
+        <Text style={styles.dividerText}>or</Text>
+        <View style={styles.dividerLine} />
+      </View>
+
+      {/* Email */}
+      <Pressable
+        onPress={() => router.push('/(auth)/email-login')}
+        style={({ pressed }) =>
+          StyleSheet.flatten([styles.btn, styles.btnEmail, pressed && styles.btnEmailPressed])
+        }
+        accessibilityRole="button"
+        accessibilityLabel="Continue with Email"
+      >
+        <Ionicons name="mail-outline" size={19} color="rgba(255,255,255,0.9)" />
+        <Text style={styles.btnEmailText}>Continue with Email</Text>
+      </Pressable>
+
+      {/* Legal */}
+      <Text style={styles.terms}>
+        By continuing, you agree to our{' '}
+        <Text style={styles.termsLink}>Terms</Text>
+        {' & '}
+        <Text style={styles.termsLink}>Privacy Policy</Text>
+      </Text>
+    </Animated.View>
+  );
+}
+
+// ─── Screen ──────────────────────────────────────────────────────────────────
+
+export default function LoginScreen() {
+  const heroOpacity = useSharedValue(0);
+  const heroTranslateY = useSharedValue(28);
+  const buttonsOpacity = useSharedValue(0);
+  const buttonsTranslateY = useSharedValue(44);
+
+  useEffect(() => {
+    const easing = Easing.out(Easing.exp);
+    heroOpacity.value = withDelay(220, withTiming(1, { duration: 720, easing }));
+    heroTranslateY.value = withDelay(220, withTiming(0, { duration: 720, easing }));
+    buttonsOpacity.value = withDelay(480, withTiming(1, { duration: 640, easing }));
+    buttonsTranslateY.value = withDelay(480, withTiming(0, { duration: 640, easing }));
+  }, []);
+
+  return (
+    <View style={styles.root}>
+      {/* Cinematic background */}
+      <LoginBackgroundVideo />
+      <GradientOverlay />
+
+      {/* Foreground content */}
+      <SafeAreaView style={styles.safeArea}>
+        <LoginHero opacity={heroOpacity} translateY={heroTranslateY} />
+        <AuthButtons opacity={buttonsOpacity} translateY={buttonsTranslateY} />
+      </SafeAreaView>
+    </View>
+  );
+}
+
+// ─── Styles ──────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    justifyContent: 'center',
-    padding: theme.spacing.lg,
-    backgroundColor: theme.colors.background,
+    backgroundColor: '#000',
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: theme.spacing.xl,
+  safeArea: {
+    flex: 1,
+    justifyContent: 'flex-end',
   },
-  logoBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.primary,
+
+  // Hero
+  hero: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: theme.spacing.md,
+    paddingHorizontal: 24,
+    paddingBottom: 16,
+    gap: 14,
   },
-  logoLetter: {
-    fontSize: 32,
-    fontWeight: '900',
-    color: theme.colors.textOnPrimary,
+  logoWrap: {
+    width: 58,
+    height: 58,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
   },
-  brand: {
-    fontSize: 28,
+  wordmark: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.72)',
+    letterSpacing: 2.4,
+    textTransform: 'uppercase',
+  },
+  headline: {
+    fontSize: 40,
     fontWeight: '800',
-    color: theme.colors.text,
-    letterSpacing: -0.5,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    letterSpacing: -1,
+    lineHeight: 46,
   },
   subtitle: {
-    fontSize: 15,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.xs,
-    textAlign: 'center',
-  },
-  form: {
-    marginBottom: theme.spacing.lg,
-  },
-  fieldLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
-  },
-  input: {
-    backgroundColor: theme.colors.background,
-    borderWidth: 1.5,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.md,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: 13,
-    marginBottom: theme.spacing.md,
     fontSize: 16,
-    color: theme.colors.text,
+    fontWeight: '400',
+    color: 'rgba(255,255,255,0.72)',
+    textAlign: 'center',
+    lineHeight: 24,
+    maxWidth: 280,
   },
-  loginBtn: {
-    marginTop: theme.spacing.xs,
+
+  // Auth card
+  authCard: {
+    marginHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: 'rgba(10,10,10,0.72)',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    padding: 20,
+    gap: 12,
   },
-  forgotLink: {
-    alignSelf: 'center',
-    marginTop: theme.spacing.md,
-  },
-  forgotText: {
-    color: theme.colors.accent,
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  footer: {
+
+  // Buttons
+  btn: {
+    height: 56,
+    borderRadius: 14,
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
   },
-  footerText: {
-    color: theme.colors.textSecondary,
-    fontSize: 15,
+  btnPressed: {
+    opacity: 0.82,
   },
-  footerLink: {
-    color: theme.colors.accent,
-    fontSize: 15,
-    fontWeight: '700',
+  btnGoogle: {
+    backgroundColor: '#FFFFFF',
+  },
+  btnGoogleText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F1F1F',
+    letterSpacing: -0.1,
+  },
+  btnApple: {
+    backgroundColor: '#111111',
+  },
+  btnAppleText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    letterSpacing: -0.1,
+  },
+  btnEmail: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.16)',
+  },
+  btnEmailPressed: {
+    backgroundColor: 'rgba(255,255,255,0.16)',
+  },
+  btnEmailText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.92)',
+    letterSpacing: -0.1,
+  },
+
+  // Divider
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginVertical: 2,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+  },
+  dividerText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.4)',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+
+  // Terms
+  terms: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.32)',
+    textAlign: 'center',
+    lineHeight: 17,
+    marginTop: 2,
+  },
+  termsLink: {
+    color: 'rgba(255,255,255,0.55)',
+    fontWeight: '600',
   },
 });

@@ -1,27 +1,69 @@
-import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { fetchMessages, sendMessage, subscribeToMessages } from '@/lib/api/messages';
 import type { Message } from '@/lib/types';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/lib/useTheme';
+
+function formatMessageTime(dateStr: string): string {
+  return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+interface BubbleProps {
+  message: Message;
+  isMine: boolean;
+}
+
+function Bubble({ message, isMine }: BubbleProps) {
+  const { colors, radius } = useTheme();
+  return (
+    <View style={[styles.bubbleWrapper, isMine ? styles.mineWrapper : styles.theirsWrapper]}>
+      <View
+        style={[
+          styles.bubble,
+          isMine
+            ? [styles.mineBubble, { backgroundColor: colors.primary }]
+            : [styles.theirsBubble, { backgroundColor: colors.surface, borderColor: colors.border }],
+          { borderRadius: radius.md },
+          isMine
+            ? { borderBottomRightRadius: 4 }
+            : { borderBottomLeftRadius: 4 },
+        ]}
+      >
+        <Text style={[styles.bubbleText, { color: isMine ? '#FFFFFF' : colors.text }]}>
+          {message.body}
+        </Text>
+      </View>
+      {message.created_at && (
+        <Text style={[styles.timeText, { color: colors.textTertiary }]}>
+          {formatMessageTime(message.created_at)}
+        </Text>
+      )}
+    </View>
+  );
+}
 
 export default function ChatScreen() {
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const { user } = useAuth();
+  const { colors, radius, shadow } = useTheme();
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const seenIds = useRef(new Set<string>());
+  const flatListRef = useRef<FlatList>(null);
 
   const appendMessage = useCallback((msg: Message) => {
     if (seenIds.current.has(msg.id)) return;
@@ -41,108 +83,173 @@ export default function ChatScreen() {
   const onSend = async () => {
     if (!user || !bookingId || !text.trim()) return;
     setSending(true);
+    const content = text.trim();
+    setText('');
     try {
-      const msg = await sendMessage(bookingId, user.id, text);
-      setText('');
+      const msg = await sendMessage(bookingId, user.id, content);
       appendMessage(msg);
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
     } finally {
       setSending(false);
     }
   };
 
+  const canSend = text.trim().length > 0 && !sending;
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={90}
-    >
-      <FlatList
-        data={messages}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        renderItem={({ item }) => {
-          const mine = item.sender_id === user?.id;
-          return (
-            <View style={[styles.bubble, mine ? styles.mine : styles.theirs]}>
-              <Text style={[styles.body, mine && styles.bodyMine]}>{item.body}</Text>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <KeyboardAvoidingView
+        style={styles.kav}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={90}
+      >
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+          renderItem={({ item }) => (
+            <Bubble message={item} isMine={item.sender_id === user?.id} />
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyChat}>
+              <Text style={[styles.emptyChatText, { color: colors.textSecondary }]}>
+                No messages yet. Say hello! 👋
+              </Text>
             </View>
-          );
-        }}
-      />
-      <View style={styles.inputRow}>
-        <TextInput
-          style={styles.input}
-          value={text}
-          onChangeText={setText}
-          placeholder="Message..."
-          placeholderTextColor={theme.colors.textSecondary}
-          multiline
+          }
         />
-        <Pressable
-          style={({ pressed }) => [styles.sendBtn, pressed && styles.sendBtnPressed, !text.trim() && styles.sendBtnDisabled]}
-          onPress={onSend}
-          disabled={sending || !text.trim()}
+
+        {/* Input bar */}
+        <View
+          style={[
+            styles.inputBar,
+            {
+              backgroundColor: colors.background,
+              borderTopColor: colors.border,
+            },
+          ]}
         >
-          <Text style={styles.sendBtnText}>{sending ? '...' : 'Send'}</Text>
-        </Pressable>
-      </View>
-    </KeyboardAvoidingView>
+          <View
+            style={[
+              styles.inputWrap,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                borderRadius: radius.button,
+              },
+            ]}
+          >
+            <TextInput
+              style={[styles.input, { color: colors.text }]}
+              value={text}
+              onChangeText={setText}
+              placeholder="Message…"
+              placeholderTextColor={colors.textTertiary}
+              multiline
+              maxLength={1000}
+            />
+          </View>
+          <Pressable
+            onPress={onSend}
+            disabled={!canSend}
+            style={({ pressed }) => [
+              styles.sendBtn,
+              {
+                backgroundColor: canSend ? colors.primary : colors.surfaceSubtle,
+                borderRadius: 999,
+                opacity: pressed ? 0.8 : 1,
+              },
+              canSend && shadow.sm,
+            ]}
+          >
+            <Ionicons
+              name="arrow-up"
+              size={18}
+              color={canSend ? '#FFFFFF' : colors.textTertiary}
+            />
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  list: { padding: theme.spacing.md, flexGrow: 1, gap: theme.spacing.sm },
-  bubble: {
+  safe: { flex: 1 },
+  kav: { flex: 1 },
+  list: {
+    padding: 16,
+    paddingBottom: 8,
+    flexGrow: 1,
+    gap: 6,
+  },
+  bubbleWrapper: {
     maxWidth: '78%',
+    gap: 3,
+  },
+  mineWrapper: {
+    alignSelf: 'flex-end',
+    alignItems: 'flex-end',
+  },
+  theirsWrapper: {
+    alignSelf: 'flex-start',
+    alignItems: 'flex-start',
+  },
+  bubble: {
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: theme.radius.lg,
   },
-  mine: {
-    alignSelf: 'flex-end',
-    backgroundColor: theme.colors.primary,
-    borderBottomRightRadius: theme.radius.sm,
-  },
-  theirs: {
-    alignSelf: 'flex-start',
-    backgroundColor: theme.colors.surface,
+  mineBubble: {},
+  theirsBubble: {
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderBottomLeftRadius: theme.radius.sm,
   },
-  body: { fontSize: 15, color: theme.colors.text, lineHeight: 22 },
-  bodyMine: { color: theme.colors.textOnPrimary },
-  inputRow: {
+  bubbleText: {
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  timeText: {
+    fontSize: 11,
+    fontWeight: '500',
+    paddingHorizontal: 4,
+  },
+  inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: theme.spacing.sm,
-    gap: theme.spacing.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-    backgroundColor: theme.colors.background,
   },
-  input: {
+  inputWrap: {
     flex: 1,
     borderWidth: 1.5,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.lg,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    maxHeight: 100,
+    maxHeight: 120,
+  },
+  input: {
     fontSize: 15,
-    color: theme.colors.text,
+    lineHeight: 22,
+    padding: 0,
   },
   sendBtn: {
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: 11,
-    borderRadius: theme.radius.lg,
+    width: 38,
+    height: 38,
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 64,
+    flexShrink: 0,
   },
-  sendBtnPressed: { opacity: 0.8 },
-  sendBtnDisabled: { opacity: 0.4 },
-  sendBtnText: { color: theme.colors.textOnPrimary, fontWeight: '700', fontSize: 15 },
+  emptyChat: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  emptyChatText: {
+    fontSize: 15,
+    textAlign: 'center',
+  },
 });

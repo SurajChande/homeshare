@@ -1,31 +1,54 @@
-import { Link, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { Link, useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/Button';
+import { Badge } from '@/components/Badge';
 import { PayBookingButton } from '@/components/PayBookingButton';
+import { Skeleton } from '@/components/LoadingSkeleton';
 import { useAuth } from '@/context/AuthContext';
 import { fetchBookingById, updateBookingStatus } from '@/lib/api/bookings';
 import { BOOKING_STATUS_LABEL } from '@/lib/constants';
 import type { Booking } from '@/lib/types';
 import { formatCents } from '@/lib/utils';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/lib/useTheme';
 
-function statusColor(status: Booking['status']): string {
+type BadgeVariant = 'primary' | 'accent' | 'danger' | 'warning' | 'success' | 'neutral';
+
+function statusBadgeVariant(status: Booking['status']): BadgeVariant {
   switch (status) {
-    case 'pending': return theme.colors.warning;
-    case 'approved': return theme.colors.accent;
+    case 'pending':   return 'warning';
+    case 'approved':  return 'primary';
     case 'paid':
-    case 'active': return theme.colors.success;
-    case 'completed': return theme.colors.textSecondary;
+    case 'active':    return 'success';
+    case 'completed': return 'neutral';
     case 'declined':
-    case 'cancelled': return theme.colors.danger;
-    default: return theme.colors.textSecondary;
+    case 'cancelled': return 'danger';
+    default:          return 'neutral';
   }
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  const { colors } = useTheme();
+  return (
+    <View style={styles.infoRow}>
+      <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{label}</Text>
+      <Text style={[styles.infoValue, { color: colors.text }]}>{value}</Text>
+    </View>
+  );
 }
 
 export default function BookingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
+  const { colors, radius, shadow, spacing } = useTheme();
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -33,21 +56,23 @@ export default function BookingDetailScreen() {
     if (id) setBooking(await fetchBookingById(id));
   }, [id]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   if (!booking || !user) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.loadingText}>Loading...</Text>
-      </View>
+      <ScrollView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        contentContainerStyle={[styles.content, { paddingHorizontal: spacing.md }]}
+      >
+        <Skeleton height={200} borderRadius={24} style={{ marginTop: 16 }} />
+        <Skeleton height={120} borderRadius={24} style={{ marginTop: 12 }} />
+        <Skeleton height={80} borderRadius={24} style={{ marginTop: 12 }} />
+      </ScrollView>
     );
   }
 
   const isOwner = booking.owner_id === user.id;
   const isRenter = booking.renter_id === user.id;
-  const color = statusColor(booking.status);
 
   const setStatus = async (status: 'approved' | 'declined' | 'cancelled') => {
     setLoading(true);
@@ -62,58 +87,126 @@ export default function BookingDetailScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.card}>
-        <Text style={styles.listingTitle}>{booking.listings?.title ?? 'Booking'}</Text>
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={[styles.content, { paddingHorizontal: spacing.md }]}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Main info card */}
+      <View
+        style={[
+          styles.mainCard,
+          {
+            backgroundColor: colors.surface,
+            borderRadius: radius.lg,
+            borderColor: colors.border,
+          },
+          shadow.md,
+        ]}
+      >
+        <Text style={[styles.listingTitle, { color: colors.text }]}>
+          {booking.listings?.title ?? 'Booking'}
+        </Text>
 
         <View style={styles.statusRow}>
-          <View style={[styles.statusDot, { backgroundColor: color }]} />
-          <Text style={[styles.statusText, { color }]}>{BOOKING_STATUS_LABEL[booking.status]}</Text>
+          <Badge
+            label={BOOKING_STATUS_LABEL[booking.status]}
+            variant={statusBadgeVariant(booking.status)}
+            dot
+          />
+          <Badge
+            label={isOwner ? 'Hosting' : 'Renting'}
+            variant={isOwner ? 'accent' : 'primary'}
+          />
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Dates</Text>
-          <Text style={styles.infoValue}>
-            {booking.start_date} → {booking.end_date}
-          </Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Role</Text>
-          <Text style={styles.infoValue}>{isOwner ? 'Hosting' : 'Renting'}</Text>
+        <View style={styles.infoRows}>
+          <InfoRow label="Check-in" value={booking.start_date} />
+          <InfoRow label="Check-out" value={booking.end_date} />
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
         <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Total</Text>
-          <Text style={styles.totalValue}>{formatCents(booking.total_cents)}</Text>
+          <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>Total</Text>
+          <Text style={[styles.totalValue, { color: colors.text }]}>
+            {formatCents(booking.total_cents)}
+          </Text>
         </View>
       </View>
 
+      {/* Owner: respond to pending request */}
       {isOwner && booking.status === 'pending' && (
-        <View style={styles.actionsCard}>
-          <Text style={styles.actionsTitle}>Respond to request</Text>
-          <Button title="Approve" onPress={() => setStatus('approved')} loading={loading} />
-          <Button
-            title="Decline"
-            variant="danger"
-            onPress={() => setStatus('declined')}
-            loading={loading}
-          />
+        <View
+          style={[
+            styles.actionCard,
+            {
+              backgroundColor: colors.surface,
+              borderRadius: radius.lg,
+              borderColor: colors.border,
+            },
+            shadow.sm,
+          ]}
+        >
+          <Text style={[styles.actionTitle, { color: colors.text }]}>Respond to request</Text>
+          <View style={styles.actionButtons}>
+            <Button
+              title="Approve"
+              variant="accent"
+              onPress={() => setStatus('approved')}
+              loading={loading}
+              fullWidth={false}
+              style={styles.actionBtn}
+            />
+            <Button
+              title="Decline"
+              variant="danger"
+              onPress={() => setStatus('declined')}
+              loading={loading}
+              fullWidth={false}
+              style={styles.actionBtn}
+            />
+          </View>
         </View>
       )}
 
+      {/* Renter: pay approved booking */}
       {isRenter && booking.status === 'approved' && (
-        <View style={styles.actionsCard}>
-          <Text style={styles.actionsTitle}>Complete payment</Text>
+        <View
+          style={[
+            styles.actionCard,
+            {
+              backgroundColor: colors.surface,
+              borderRadius: radius.lg,
+              borderColor: colors.primaryMuted,
+              borderWidth: 2,
+            },
+            shadow.sm,
+          ]}
+        >
+          <View style={styles.payHeader}>
+            <Ionicons name="shield-checkmark-outline" size={20} color={colors.primary} />
+            <Text style={[styles.actionTitle, { color: colors.text }]}>Complete payment</Text>
+          </View>
           <PayBookingButton bookingId={booking.id} onPaid={load} />
         </View>
       )}
 
+      {/* Renter: cancel pending request */}
       {isRenter && booking.status === 'pending' && (
-        <View style={styles.actionsCard}>
+        <View
+          style={[
+            styles.actionCard,
+            {
+              backgroundColor: colors.surface,
+              borderRadius: radius.lg,
+              borderColor: colors.border,
+            },
+            shadow.sm,
+          ]}
+        >
           <Button
             title="Cancel request"
             variant="secondary"
@@ -123,50 +216,57 @@ export default function BookingDetailScreen() {
         </View>
       )}
 
-      <Link href={`/chat/${booking.id}`} style={styles.chatLink}>
-        <Text style={styles.chatText}>Open messages for this booking</Text>
+      {/* Chat link */}
+      <Link href={`/chat/${booking.id}`} asChild>
+        <Pressable
+          style={({ pressed }) => [
+            styles.chatCard,
+            {
+              backgroundColor: colors.primaryMuted,
+              borderRadius: radius.lg,
+              opacity: pressed ? 0.75 : 1,
+            },
+          ]}
+        >
+          <Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.primary} />
+          <Text style={[styles.chatText, { color: colors.primary }]}>
+            Open messages for this booking
+          </Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.primary} />
+        </Pressable>
       </Link>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { padding: theme.spacing.md, gap: theme.spacing.md, paddingBottom: theme.spacing.xxl },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  loadingText: { color: theme.colors.textSecondary, fontSize: 16 },
-  card: {
-    backgroundColor: theme.colors.background,
-    borderRadius: theme.radius.lg,
+  container: { flex: 1 },
+  content: {
+    paddingTop: 16,
+    paddingBottom: 48,
+    gap: 12,
+  },
+  mainCard: {
+    padding: 20,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: theme.spacing.md,
-    gap: theme.spacing.sm,
+    gap: 14,
   },
   listingTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: theme.colors.text,
     letterSpacing: -0.3,
+    lineHeight: 29,
   },
   statusRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  statusText: {
-    fontSize: 15,
-    fontWeight: '700',
+    gap: 8,
+    flexWrap: 'wrap',
   },
   divider: {
     height: 1,
-    backgroundColor: theme.colors.border,
-    marginVertical: theme.spacing.xs,
+  },
+  infoRows: {
+    gap: 10,
   },
   infoRow: {
     flexDirection: 'row',
@@ -175,50 +275,55 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
   },
   infoValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.colors.text,
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: theme.spacing.xs,
   },
   totalLabel: {
     fontSize: 16,
-    color: theme.colors.textSecondary,
   },
   totalValue: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '800',
-    color: theme.colors.text,
+    letterSpacing: -0.4,
   },
-  actionsCard: {
-    backgroundColor: theme.colors.background,
-    borderRadius: theme.radius.lg,
+  actionCard: {
+    padding: 20,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: theme.spacing.md,
-    gap: theme.spacing.sm,
+    gap: 12,
   },
-  actionsTitle: {
+  actionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
+    letterSpacing: -0.1,
   },
-  chatLink: {
-    alignSelf: 'center',
-    marginTop: theme.spacing.sm,
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  actionBtn: {
+    flex: 1,
+  },
+  payHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  chatCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    gap: 10,
   },
   chatText: {
-    color: theme.colors.accent,
+    flex: 1,
     fontSize: 15,
     fontWeight: '600',
-    textDecorationLine: 'underline',
   },
 });

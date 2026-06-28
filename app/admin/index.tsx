@@ -1,18 +1,31 @@
-import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { getAdminStats, type AdminStats } from '@/lib/api/admin';
 import { formatCents } from '@/lib/utils';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/lib/useTheme';
+import { SectionHeader } from '@/components/SectionHeader';
 
-const QUICK_LINKS = [
-  { href: '/admin/users', label: 'Manage Users', icon: '👥', color: theme.colors.accent },
-  { href: '/admin/listings', label: 'Manage Listings', icon: '🏷', color: theme.colors.primary },
-  { href: '/admin/bookings', label: 'Manage Bookings', icon: '📋', color: '#8B5CF6' },
-  { href: '/admin/reports', label: 'View Reports', icon: '📊', color: theme.colors.success },
-] as const;
+type IoniconName = keyof typeof Ionicons.glyphMap;
+
+const QUICK_LINKS: { href: string; label: string; icon: IoniconName; tint: string }[] = [
+  { href: '/admin/users',     label: 'Manage Users',    icon: 'people-outline',   tint: '#4F46E5' },
+  { href: '/admin/listings',  label: 'Manage Listings', icon: 'storefront-outline', tint: '#10B981' },
+  { href: '/admin/bookings',  label: 'Manage Bookings', icon: 'calendar-outline', tint: '#8B5CF6' },
+  { href: '/admin/reports',   label: 'View Reports',    icon: 'bar-chart-outline', tint: '#F59E0B' },
+];
 
 export default function AdminDashboard() {
+  const { colors, radius, shadow, spacing } = useTheme();
+  const router = useRouter();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,58 +33,83 @@ export default function AdminDashboard() {
   useEffect(() => {
     getAdminStats()
       .then(setStats)
-      .catch((e) => setError(e.message))
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Failed'))
       .finally(() => setLoading(false));
   }, []);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={[styles.content, { paddingHorizontal: spacing.md }]}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.header}>
-        <Text style={styles.greeting}>Admin Dashboard</Text>
-        <Text style={styles.subtitle}>Platform overview</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Dashboard</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Platform overview</Text>
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loader} />
+        <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
       ) : error ? (
-        <View style={styles.errorBox}>
-          <Text style={styles.errorText}>{error}</Text>
+        <View
+          style={[
+            styles.errorBox,
+            { backgroundColor: colors.dangerMuted, borderColor: colors.danger, borderRadius: radius.md },
+          ]}
+        >
+          <Ionicons name="warning-outline" size={16} color={colors.danger} />
+          <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
         </View>
       ) : stats ? (
         <>
-          <Text style={styles.sectionTitle}>Platform metrics</Text>
+          <SectionHeader title="Platform metrics" />
           <View style={styles.statsGrid}>
-            <StatCard label="Total users" value={stats.totalUsers.toString()} icon="👤" />
-            <StatCard label="Total listings" value={stats.totalListings.toString()} icon="🏷" />
-            <StatCard label="Active listings" value={stats.activeListings.toString()} icon="✅" />
-            <StatCard label="Total bookings" value={stats.totalBookings.toString()} icon="📋" />
-            <StatCard
-              label="Completed"
-              value={stats.completedBookings.toString()}
-              icon="🎉"
-            />
+            <StatCard label="Users"           value={stats.totalUsers.toString()}       icon="people"       colors={colors} radius={radius} shadow={shadow} />
+            <StatCard label="Listings"        value={stats.totalListings.toString()}    icon="storefront"   colors={colors} radius={radius} shadow={shadow} />
+            <StatCard label="Active"          value={stats.activeListings.toString()}   icon="checkmark-circle" colors={colors} radius={radius} shadow={shadow} />
+            <StatCard label="Bookings"        value={stats.totalBookings.toString()}    icon="calendar"     colors={colors} radius={radius} shadow={shadow} />
+            <StatCard label="Completed"       value={stats.completedBookings.toString()} icon="trophy"     colors={colors} radius={radius} shadow={shadow} />
             <StatCard
               label="Revenue"
               value={formatCents(stats.totalRevenueCents)}
-              icon="💰"
+              icon="cash"
+              colors={colors} radius={radius} shadow={shadow}
               highlight
             />
           </View>
         </>
       ) : null}
 
-      <Text style={styles.sectionTitle}>Quick actions</Text>
+      <SectionHeader title="Quick actions" style={styles.quickTitle} />
       <View style={styles.quickGrid}>
         {QUICK_LINKS.map((item) => (
-          <Link key={item.href} href={item.href as Parameters<typeof Link>[0]['href']} asChild>
-            <Pressable style={({ pressed }) => [styles.quickCard, pressed && styles.quickCardPressed]}>
-              <View style={[styles.quickIcon, { backgroundColor: item.color + '20' }]}>
-                <Text style={styles.quickIconText}>{item.icon}</Text>
-              </View>
-              <Text style={styles.quickLabel}>{item.label}</Text>
-              <Text style={styles.quickArrow}>→</Text>
-            </Pressable>
-          </Link>
+          <Pressable
+            key={item.href}
+            onPress={() => router.push(item.href as Parameters<typeof router.push>[0])}
+            style={({ pressed }) =>
+              StyleSheet.flatten([
+                styles.quickCard,
+                {
+                  backgroundColor: colors.surface,
+                  borderRadius: radius.lg,
+                  borderColor: colors.border,
+                  opacity: pressed ? 0.75 : 1,
+                },
+                shadow.sm,
+              ])
+            }
+          >
+            <View
+              style={[
+                styles.quickIconWrap,
+                { backgroundColor: item.tint + '18', borderRadius: radius.md },
+              ]}
+            >
+              <Ionicons name={item.icon} size={22} color={item.tint} />
+            </View>
+            <Text style={[styles.quickLabel, { color: colors.text }]}>{item.label}</Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.borderStrong} />
+          </Pressable>
         ))}
       </View>
     </ScrollView>
@@ -83,88 +121,119 @@ function StatCard({
   value,
   icon,
   highlight,
+  colors,
+  radius,
+  shadow,
 }: {
   label: string;
   value: string;
-  icon: string;
+  icon: IoniconName;
   highlight?: boolean;
+  colors: ReturnType<typeof useTheme>['colors'];
+  radius: ReturnType<typeof useTheme>['radius'];
+  shadow: ReturnType<typeof useTheme>['shadow'];
 }) {
   return (
-    <View style={[styles.statCard, highlight && styles.statCardHighlight]}>
-      <Text style={styles.statIcon}>{icon}</Text>
-      <Text style={[styles.statValue, highlight && styles.statValueHighlight]}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+    <View
+      style={[
+        styles.statCard,
+        {
+          backgroundColor: highlight ? colors.primaryMuted : colors.surface,
+          borderRadius: radius.lg,
+          borderColor: highlight ? colors.primary : colors.border,
+        },
+        shadow.sm,
+      ]}
+    >
+      <Ionicons
+        name={icon}
+        size={20}
+        color={highlight ? colors.primary : colors.textSecondary}
+      />
+      <Text style={[styles.statValue, { color: highlight ? colors.primary : colors.text }]}>
+        {value}
+      </Text>
+      <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{label}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.surface },
-  content: { padding: theme.spacing.lg, paddingBottom: theme.spacing.xxl },
-  header: { marginBottom: theme.spacing.lg },
-  greeting: { fontSize: 28, fontWeight: '800', color: theme.colors.text, letterSpacing: -0.5 },
-  subtitle: { fontSize: 15, color: theme.colors.textSecondary, marginTop: theme.spacing.xs },
-  loader: { marginTop: theme.spacing.xxl },
+  container: { flex: 1 },
+  content: {
+    paddingTop: 16,
+    paddingBottom: 48,
+    gap: 0,
+  },
+  header: {
+    marginBottom: 24,
+    gap: 4,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: -0.4,
+  },
+  subtitle: {
+    fontSize: 15,
+  },
+  loader: { marginTop: 40 },
   errorBox: {
-    backgroundColor: '#FEE2E2',
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 14,
+    borderWidth: 1,
+    marginBottom: 16,
   },
-  errorText: { color: theme.colors.danger, fontSize: 14 },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: theme.colors.text,
-    marginBottom: theme.spacing.md,
-    marginTop: theme.spacing.md,
-  },
+  errorText: { fontSize: 14, flex: 1 },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: theme.spacing.sm,
+    gap: 10,
+    marginBottom: 24,
   },
   statCard: {
     flex: 1,
     minWidth: 140,
-    backgroundColor: theme.colors.background,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.md,
+    padding: 16,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    gap: 6,
     alignItems: 'flex-start',
-    gap: theme.spacing.xs,
   },
-  statCardHighlight: {
-    backgroundColor: theme.colors.primaryMuted,
-    borderColor: theme.colors.primary,
+  statValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: -0.3,
   },
-  statIcon: { fontSize: 22 },
-  statValue: { fontSize: 24, fontWeight: '800', color: theme.colors.text },
-  statValueHighlight: { color: '#A66E00' },
-  statLabel: { fontSize: 13, color: theme.colors.textSecondary, fontWeight: '500' },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  quickTitle: {
+    marginBottom: 12,
+  },
   quickGrid: {
-    gap: theme.spacing.sm,
+    gap: 10,
   },
   quickCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.md,
-    backgroundColor: theme.colors.background,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.md,
+    gap: 14,
+    padding: 16,
     borderWidth: 1,
-    borderColor: theme.colors.border,
   },
-  quickCardPressed: { opacity: 0.85 },
-  quickIcon: {
+  quickIconWrap: {
     width: 44,
     height: 44,
-    borderRadius: theme.radius.md,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
-  quickIconText: { fontSize: 22 },
-  quickLabel: { flex: 1, fontSize: 15, fontWeight: '700', color: theme.colors.text },
-  quickArrow: { fontSize: 18, color: theme.colors.textSecondary },
+  quickLabel: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: -0.1,
+  },
 });

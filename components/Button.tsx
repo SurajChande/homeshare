@@ -7,13 +7,17 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/lib/useTheme';
+
+export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'accent';
 
 interface Props extends Omit<PressableProps, 'style'> {
   title: string;
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+  variant?: ButtonVariant;
   loading?: boolean;
+  size?: 'sm' | 'md' | 'lg';
   style?: StyleProp<ViewStyle>;
+  fullWidth?: boolean;
 }
 
 export function Button({
@@ -21,28 +25,64 @@ export function Button({
   variant = 'primary',
   loading,
   disabled,
+  size = 'md',
   style,
+  fullWidth = true,
   ...rest
 }: Props) {
-  const isLight = variant === 'primary';
+  const { colors, radius } = useTheme();
+
+  const variantStyle = {
+    primary: { bg: colors.primary, text: colors.textOnPrimary, border: colors.primary },
+    secondary: { bg: colors.surface, text: colors.text, border: colors.border },
+    danger: { bg: colors.danger, text: '#FFFFFF', border: colors.danger },
+    ghost: { bg: 'transparent', text: colors.primary, border: 'transparent' },
+    accent: { bg: colors.accent, text: '#FFFFFF', border: colors.accent },
+  }[variant];
+
+  const sizeStyle = {
+    sm: { py: 10, px: 16, fontSize: 14, br: radius.sm },
+    md: { py: 14, px: 20, fontSize: 16, br: radius.button },
+    lg: { py: 18, px: 24, fontSize: 17, br: radius.button },
+  }[size];
+
   return (
     <Pressable
-      style={({ pressed }) => {
-        const base: StyleProp<ViewStyle> = [
+      style={({ pressed }) =>
+        StyleSheet.flatten([
           styles.base,
-          styles[variant],
-          (disabled || loading) && styles.disabled,
-          pressed && styles.pressed,
-        ];
-        return StyleSheet.flatten([base, style]);
-      }}
+          {
+            backgroundColor: variantStyle.bg,
+            borderColor: variantStyle.border,
+            borderRadius: sizeStyle.br,
+            paddingVertical: sizeStyle.py,
+            paddingHorizontal: sizeStyle.px,
+            borderWidth: variant === 'secondary' ? 1.5 : 0,
+            alignSelf: fullWidth ? 'stretch' : 'flex-start',
+            opacity: disabled || loading ? 0.45 : pressed ? 0.82 : 1,
+          },
+          style,
+        ])
+      }
       disabled={disabled || loading}
       {...rest}
     >
       {loading ? (
-        <ActivityIndicator color={isLight ? theme.colors.textOnPrimary : theme.colors.accent} />
+        <ActivityIndicator
+          color={variant === 'primary' || variant === 'danger' || variant === 'accent'
+            ? '#FFFFFF'
+            : colors.primary}
+          size="small"
+        />
       ) : (
-        <Text style={[styles.text, styles[`text_${variant}`]]}>{title}</Text>
+        <Text
+          style={[
+            styles.text,
+            { color: variantStyle.text, fontSize: sizeStyle.fontSize },
+          ]}
+        >
+          {title}
+        </Text>
       )}
     </Pressable>
   );
@@ -50,46 +90,12 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: theme.radius.md,
     alignItems: 'center',
-  },
-  primary: {
-    backgroundColor: theme.colors.primary,
-  },
-  secondary: {
-    backgroundColor: theme.colors.background,
-    borderWidth: 1.5,
-    borderColor: theme.colors.border,
-  },
-  danger: {
-    backgroundColor: theme.colors.danger,
-  },
-  ghost: {
-    backgroundColor: 'transparent',
-  },
-  disabled: {
-    opacity: 0.45,
-  },
-  pressed: {
-    opacity: 0.8,
+    justifyContent: 'center',
+    flexDirection: 'row',
   },
   text: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
     letterSpacing: 0.1,
-  },
-  text_primary: {
-    color: theme.colors.textOnPrimary,
-  },
-  text_secondary: {
-    color: theme.colors.text,
-  },
-  text_danger: {
-    color: '#fff',
-  },
-  text_ghost: {
-    color: theme.colors.accent,
   },
 });

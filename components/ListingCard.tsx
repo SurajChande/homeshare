@@ -1,43 +1,90 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Link } from 'expo-router';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { CATEGORY_LABEL } from '@/lib/constants';
 import { listingImageUrl } from '@/lib/api/listings';
 import type { Listing } from '@/lib/types';
 import { formatCents } from '@/lib/utils';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/lib/useTheme';
+import { Badge } from '@/components/Badge';
 
 export function ListingCard({ listing }: { listing: Listing }) {
+  const { colors, radius, shadow } = useTheme();
   const imageUri = listingImageUrl(listing);
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.97, { mass: 0.6, damping: 14 });
+  };
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { mass: 0.6, damping: 14 });
+  };
 
   return (
     <Link href={`/listing/${listing.id}`} asChild>
-      <Pressable style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
+      <Pressable
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+      >
+        <Animated.View
+          style={[
+            styles.card,
+            {
+              backgroundColor: colors.surface,
+              borderRadius: radius.lg,
+              borderColor: colors.border,
+            },
+            shadow.md,
+            animatedStyle,
+          ]}
+        >
         {imageUri ? (
-          <Image source={{ uri: imageUri }} style={styles.image} />
+          <Image source={{ uri: imageUri }} style={[styles.image, { borderRadius: radius.lg }]} />
         ) : (
-          <View style={[styles.image, styles.placeholder]}>
-            <Text style={styles.placeholderText}>No photo</Text>
+          <View
+            style={[
+              styles.image,
+              styles.placeholder,
+              { backgroundColor: colors.surfaceSubtle, borderRadius: radius.lg },
+            ]}
+          >
+            <Text style={[styles.placeholderText, { color: colors.textTertiary }]}>No photo</Text>
           </View>
         )}
-        <View style={styles.body}>
-          <View style={styles.header}>
-            <Text style={styles.category}>{CATEGORY_LABEL[listing.category]}</Text>
-            {!listing.is_active && (
-              <View style={styles.inactiveBadge}>
-                <Text style={styles.inactiveBadgeText}>Inactive</Text>
-              </View>
-            )}
+
+        {!listing.is_active && (
+          <View style={styles.inactiveBadgeContainer}>
+            <Badge label="Inactive" variant="neutral" size="sm" />
           </View>
-          <Text style={styles.title} numberOfLines={2}>
+        )}
+
+        <View style={styles.body}>
+          <Text style={[styles.category, { color: colors.textSecondary }]}>
+            {CATEGORY_LABEL[listing.category]}
+          </Text>
+          <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
             {listing.title}
           </Text>
           <View style={styles.footer}>
-            <Text style={styles.city}>{listing.city || '—'}</Text>
-            <View style={styles.priceBadge}>
-              <Text style={styles.price}>{formatCents(listing.daily_price_cents)}/day</Text>
+            <Text style={[styles.city, { color: colors.textSecondary }]} numberOfLines={1}>
+              {listing.city || '—'}
+            </Text>
+            <View style={[styles.pricePill, { backgroundColor: colors.primaryMuted }]}>
+              <Text style={[styles.price, { color: colors.primary }]}>
+                {formatCents(listing.daily_price_cents)}/day
+              </Text>
             </View>
           </View>
         </View>
+        </Animated.View>
       </Pressable>
     </Link>
   );
@@ -45,85 +92,62 @@ export function ListingCard({ listing }: { listing: Listing }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: theme.colors.background,
-    borderRadius: theme.radius.md,
+    marginBottom: 16,
     overflow: 'hidden',
-    marginBottom: theme.spacing.md,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  cardPressed: {
-    opacity: 0.92,
   },
   image: {
     width: '100%',
-    height: 180,
-    backgroundColor: theme.colors.surface,
+    height: 200,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   },
   placeholder: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   placeholderText: {
-    color: theme.colors.textSecondary,
     fontSize: 14,
   },
-  body: {
-    padding: theme.spacing.md,
+  inactiveBadgeContainer: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: theme.spacing.xs,
+  body: {
+    padding: 16,
+    gap: 6,
   },
   category: {
     fontSize: 11,
-    color: theme.colors.textSecondary,
-    fontWeight: '600',
+    fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  inactiveBadge: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.sm,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  inactiveBadgeText: {
-    fontSize: 11,
-    color: theme.colors.textSecondary,
-    fontWeight: '600',
+    letterSpacing: 0.8,
   },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
-    color: theme.colors.text,
-    marginBottom: theme.spacing.sm,
-    lineHeight: 22,
+    lineHeight: 23,
+    letterSpacing: -0.2,
   },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginTop: 4,
   },
   city: {
     fontSize: 13,
-    color: theme.colors.textSecondary,
     flex: 1,
-    marginRight: theme.spacing.sm,
+    marginRight: 8,
   },
-  priceBadge: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.radius.sm,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+  pricePill: {
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
   },
   price: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
-    color: theme.colors.textOnPrimary,
   },
 });

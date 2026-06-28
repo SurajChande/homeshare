@@ -1,4 +1,3 @@
-import { Link } from 'expo-router';
 import { useState } from 'react';
 import {
   Alert,
@@ -10,14 +9,16 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Link } from 'expo-router';
 import { Button } from '@/components/Button';
 import { useAuth } from '@/context/AuthContext';
 import { getAuthErrorMessage } from '@/lib/auth-errors';
 import { isSupabaseConfigured } from '@/lib/supabase';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/lib/useTheme';
 
 export default function SignupScreen() {
   const { signUp } = useAuth();
+  const { colors, spacing, radius, shadow } = useTheme();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -42,7 +43,7 @@ export default function SignupScreen() {
       if (needsEmailConfirmation) {
         Alert.alert(
           'Confirm your email',
-          'We sent a confirmation link to your inbox. Click it, then return here to log in.\n\nFor local testing, disable email confirmation in Supabase Dashboard → Authentication → Providers → Email.'
+          'We sent a confirmation link to your inbox. Click it, then return here to log in.'
         );
       }
     } catch (e: unknown) {
@@ -52,50 +53,95 @@ export default function SignupScreen() {
     }
   };
 
+  const inputStyle = [
+    styles.input,
+    {
+      backgroundColor: colors.background,
+      borderColor: colors.border,
+      color: colors.text,
+      borderRadius: radius.md,
+    },
+  ];
+
   return (
     <KeyboardAvoidingView
-      style={styles.outer}
+      style={[styles.outer, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={[styles.container, { paddingHorizontal: spacing.lg }]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
-          <Text style={styles.title}>Create account</Text>
-          <Text style={styles.subtitle}>Join Homeshare and start sharing</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Create account</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            Join your neighborhood on Homeshare.
+          </Text>
         </View>
 
-        <Text style={styles.fieldLabel}>Your name</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Jane Smith"
-          placeholderTextColor={theme.colors.textSecondary}
-          value={displayName}
-          onChangeText={setDisplayName}
-        />
-        <Text style={styles.fieldLabel}>Email</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="you@example.com"
-          placeholderTextColor={theme.colors.textSecondary}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-        />
-        <Text style={styles.fieldLabel}>Password</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Minimum 6 characters"
-          placeholderTextColor={theme.colors.textSecondary}
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-        <Button title="Create account" onPress={onSignup} loading={loading} style={styles.signupBtn} />
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: colors.surface,
+              borderRadius: radius.lg,
+              borderColor: colors.border,
+            },
+            shadow.md,
+          ]}
+        >
+          <View style={styles.fields}>
+            <View>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Your name</Text>
+              <TextInput
+                style={inputStyle}
+                placeholder="Jane Smith"
+                placeholderTextColor={colors.textTertiary}
+                value={displayName}
+                onChangeText={setDisplayName}
+              />
+            </View>
+            <View>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Email</Text>
+              <TextInput
+                style={inputStyle}
+                placeholder="you@example.com"
+                placeholderTextColor={colors.textTertiary}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                autoComplete="email"
+                value={email}
+                onChangeText={setEmail}
+              />
+            </View>
+            <View>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Password</Text>
+              <TextInput
+                style={inputStyle}
+                placeholder="Minimum 6 characters"
+                placeholderTextColor={colors.textTertiary}
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword}
+              />
+            </View>
+          </View>
+
+          <Button
+            title="Create account"
+            onPress={onSignup}
+            loading={loading}
+            style={styles.signupBtn}
+          />
+        </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Already have an account? </Text>
+          <Text style={[styles.footerText, { color: colors.textSecondary }]}>
+            Already have an account?{' '}
+          </Text>
           <Link href="/(auth)/login">
-            <Text style={styles.footerLink}>Log in</Text>
+            <Text style={[styles.footerLink, { color: colors.primary }]}>Log in</Text>
           </Link>
         </View>
       </ScrollView>
@@ -104,61 +150,56 @@ export default function SignupScreen() {
 }
 
 const styles = StyleSheet.create({
-  outer: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
+  outer: { flex: 1 },
   container: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: theme.spacing.lg,
+    paddingVertical: 48,
+    gap: 24,
   },
   header: {
-    marginBottom: theme.spacing.xl,
+    gap: 6,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '800',
-    color: theme.colors.text,
     letterSpacing: -0.5,
-    marginBottom: theme.spacing.xs,
   },
   subtitle: {
-    fontSize: 15,
-    color: theme.colors.textSecondary,
+    fontSize: 16,
+    lineHeight: 23,
   },
-  fieldLabel: {
-    fontSize: 14,
+  card: {
+    padding: 24,
+    borderWidth: 1,
+    gap: 20,
+  },
+  fields: {
+    gap: 12,
+  },
+  label: {
+    fontSize: 13,
     fontWeight: '600',
-    color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
+    marginBottom: 6,
   },
   input: {
-    backgroundColor: theme.colors.background,
     borderWidth: 1.5,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.md,
-    paddingHorizontal: theme.spacing.md,
+    paddingHorizontal: 16,
     paddingVertical: 13,
-    marginBottom: theme.spacing.md,
     fontSize: 16,
-    color: theme.colors.text,
   },
   signupBtn: {
-    marginTop: theme.spacing.xs,
+    marginTop: 4,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: theme.spacing.xl,
   },
   footerText: {
-    color: theme.colors.textSecondary,
     fontSize: 15,
   },
   footerLink: {
-    color: theme.colors.accent,
     fontSize: 15,
     fontWeight: '700',
   },

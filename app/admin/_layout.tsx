@@ -43,12 +43,29 @@ function AdminSidebar() {
       </View>
       <ScrollView style={styles.sidebarNav}>
         {NAV_ITEMS.map((item) => {
-          const active = currentPath === item.href || (item.href !== '/admin' && currentPath.startsWith(item.href));
+          const active =
+            currentPath === item.href ||
+            (item.href !== '/admin' && currentPath.startsWith(item.href));
           return (
-            <Link key={item.href} href={item.href as Parameters<typeof Link>[0]['href']} asChild>
-              <Pressable style={[styles.navItem, active && styles.navItemActive]}>
+            <Link
+              key={item.href}
+              href={item.href as Parameters<typeof Link>[0]['href']}
+              asChild
+            >
+              {/* StyleSheet.flatten ensures Slot never receives a style array */}
+              <Pressable
+                style={StyleSheet.flatten([
+                  styles.navItem,
+                  active ? styles.navItemActive : undefined,
+                ])}
+              >
                 <Text style={styles.navIcon}>{item.icon}</Text>
-                <Text style={[styles.navLabel, active && styles.navLabelActive]}>
+                <Text
+                  style={StyleSheet.flatten([
+                    styles.navLabel,
+                    active ? styles.navLabelActive : undefined,
+                  ])}
+                >
                   {item.label}
                 </Text>
               </Pressable>
@@ -91,9 +108,9 @@ export default function AdminLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: theme.colors.background },
-        headerTintColor: theme.colors.text,
-        headerTitleStyle: { fontWeight: '700', fontSize: 17 },
+        headerStyle: { backgroundColor: theme.colors.background } as object,
+        headerTintColor: theme.colors.primary,
+        headerTitleStyle: { fontWeight: '700', fontSize: 17, letterSpacing: -0.2 },
         headerShadowVisible: false,
         headerLeft: () => <BackButton />,
       }}
@@ -146,7 +163,7 @@ const styles = StyleSheet.create({
   sidebarLogo: {
     width: 40,
     height: 40,
-    borderRadius: theme.radius.md,
+    borderRadius: theme.radius.sm,
     backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -176,7 +193,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 10,
     paddingHorizontal: theme.spacing.sm,
-    borderRadius: theme.radius.md,
+    borderRadius: theme.radius.sm,
     marginBottom: 2,
   },
   navItemActive: {
@@ -206,7 +223,7 @@ const styles = StyleSheet.create({
   },
   webContent: {
     flex: 1,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.background,
     overflow: 'hidden',
   },
   backBtn: {
@@ -215,7 +232,7 @@ const styles = StyleSheet.create({
   },
   backBtnText: {
     fontSize: 17,
-    color: theme.colors.accent,
+    color: theme.colors.primary,
     fontWeight: '600',
   },
 });

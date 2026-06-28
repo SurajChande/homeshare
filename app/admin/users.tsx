@@ -1,19 +1,23 @@
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { adminUpdateUser, getAllUsers } from '@/lib/api/admin';
 import type { Profile } from '@/lib/types';
-import { theme } from '@/lib/theme';
+import { useTheme } from '@/lib/useTheme';
+import { SearchBar } from '@/components/SearchBar';
+import { Avatar } from '@/components/Avatar';
+import { Badge } from '@/components/Badge';
+import { Skeleton } from '@/components/LoadingSkeleton';
 
 export default function AdminUsersScreen() {
+  const { colors, radius, shadow, spacing } = useTheme();
   const [users, setUsers] = useState<Profile[]>([]);
   const [filtered, setFiltered] = useState<Profile[]>([]);
   const [search, setSearch] = useState('');
@@ -29,9 +33,7 @@ export default function AdminUsersScreen() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   useEffect(() => {
     const q = search.toLowerCase();
@@ -63,52 +65,94 @@ export default function AdminUsersScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.toolbar}>
-        <TextInput
-          style={styles.search}
-          placeholder="Search by name or city..."
-          placeholderTextColor={theme.colors.textSecondary}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.toolbar, { borderBottomColor: colors.border }]}>
+        <SearchBar
           value={search}
           onChangeText={setSearch}
+          placeholder="Search by name or city…"
+          style={styles.searchBar}
         />
-        <Text style={styles.count}>{filtered.length} users</Text>
+        <Text style={[styles.count, { color: colors.textSecondary }]}>
+          {filtered.length} users
+        </Text>
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loader} />
+        <View style={[styles.list, { paddingHorizontal: spacing.md }]}>
+          {[0, 1, 2, 3, 4].map((i) => (
+            <View
+              key={i}
+              style={[
+                styles.skeletonRow,
+                { backgroundColor: colors.surface, borderRadius: radius.lg },
+              ]}
+            >
+              <Skeleton width={44} height={44} borderRadius={22} />
+              <View style={styles.skeletonContent}>
+                <Skeleton width="55%" height={14} borderRadius={6} />
+                <Skeleton width="35%" height={11} borderRadius={5} style={{ marginTop: 6 }} />
+              </View>
+              <Skeleton width={80} height={32} borderRadius={radius.button} />
+            </View>
+          ))}
+        </View>
       ) : (
         <FlatList
           data={filtered}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingHorizontal: spacing.md }]}
+          showsVerticalScrollIndicator={false}
+          ItemSeparatorComponent={() => <View style={styles.sep} />}
           renderItem={({ item }) => (
-            <View style={styles.row}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>
-                  {item.display_name.charAt(0).toUpperCase()}
-                </Text>
-              </View>
+            <View
+              style={[
+                styles.row,
+                {
+                  backgroundColor: colors.surface,
+                  borderRadius: radius.lg,
+                  borderColor: colors.border,
+                },
+                shadow.sm,
+              ]}
+            >
+              <Avatar name={item.display_name} size={44} />
               <View style={styles.info}>
                 <View style={styles.nameRow}>
-                  <Text style={styles.name}>{item.display_name}</Text>
-                  {item.is_admin && (
-                    <View style={styles.adminBadge}>
-                      <Text style={styles.adminBadgeText}>Admin</Text>
-                    </View>
-                  )}
+                  <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
+                    {item.display_name}
+                  </Text>
+                  {item.is_admin && <Badge label="Admin" variant="primary" size="sm" />}
                 </View>
-                <Text style={styles.meta}>{item.city ?? 'No city'}</Text>
-                <Text style={styles.meta}>
-                  Joined {new Date(item.created_at).toLocaleDateString()}
+                <Text style={[styles.meta, { color: colors.textSecondary }]}>
+                  {item.city ?? 'No city'} · Joined {new Date(item.created_at).toLocaleDateString()}
                 </Text>
               </View>
               <Pressable
-                style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
                 onPress={() => toggleAdmin(item)}
+                style={({ pressed }) =>
+                  StyleSheet.flatten([
+                    styles.actionBtn,
+                    {
+                      backgroundColor: item.is_admin ? colors.dangerMuted : colors.primaryMuted,
+                      borderRadius: radius.xs,
+                      opacity: pressed ? 0.7 : 1,
+                    },
+                  ])
+                }
               >
-                <Text style={styles.actionText}>
-                  {item.is_admin ? 'Remove admin' : 'Make admin'}
+                <Ionicons
+                  name={item.is_admin ? 'remove-circle-outline' : 'shield-outline'}
+                  size={14}
+                  color={item.is_admin ? colors.danger : colors.primary}
+                />
+                <Text
+                  style={[
+                    styles.actionText,
+                    { color: item.is_admin ? colors.danger : colors.primary },
+                  ]}
+                >
+                  {item.is_admin ? 'Remove' : 'Make admin'}
                 </Text>
               </Pressable>
             </View>
@@ -120,69 +164,53 @@ export default function AdminUsersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.surface },
+  container: { flex: 1 },
   toolbar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.sm,
-    padding: theme.spacing.md,
-    backgroundColor: theme.colors.background,
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
   },
-  search: {
-    flex: 1,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1.5,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.md,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: 10,
-    fontSize: 15,
-    color: theme.colors.text,
+  searchBar: { flex: 1 },
+  count: { fontSize: 13, fontWeight: '600', flexShrink: 0 },
+  list: { paddingTop: 12, paddingBottom: 40, gap: 8 },
+  skeletonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    gap: 12,
   },
-  count: { fontSize: 13, color: theme.colors.textSecondary, fontWeight: '500', flexShrink: 0 },
-  loader: { marginTop: theme.spacing.xxl },
-  list: { padding: theme.spacing.md, gap: theme.spacing.sm },
+  skeletonContent: { flex: 1, gap: 0 },
+  sep: { height: 0 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.md,
-    backgroundColor: theme.colors.background,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.md,
+    gap: 12,
+    padding: 14,
     borderWidth: 1,
-    borderColor: theme.colors.border,
   },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: theme.colors.primaryMuted,
+  info: { flex: 1, minWidth: 0, gap: 3 },
+  nameRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
+    gap: 8,
+    flexWrap: 'wrap',
   },
-  avatarText: { fontSize: 18, fontWeight: '700', color: '#A66E00' },
-  info: { flex: 1 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
-  name: { fontSize: 15, fontWeight: '700', color: theme.colors.text },
-  adminBadge: {
-    backgroundColor: theme.colors.primaryMuted,
-    borderRadius: theme.radius.sm,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+  name: {
+    fontSize: 15,
+    fontWeight: '700',
+    flexShrink: 1,
   },
-  adminBadgeText: { fontSize: 11, fontWeight: '700', color: '#A66E00' },
-  meta: { fontSize: 13, color: theme.colors.textSecondary },
+  meta: { fontSize: 12, fontWeight: '500' },
   actionBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: theme.radius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    gap: 5,
     flexShrink: 0,
   },
-  actionBtnPressed: { opacity: 0.7 },
-  actionText: { fontSize: 13, fontWeight: '600', color: theme.colors.accent },
+  actionText: { fontSize: 12, fontWeight: '600' },
 });
