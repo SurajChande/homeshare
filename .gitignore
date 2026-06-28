@@ -30,6 +30,13 @@ yarn-error.*
 .DS_Store
 *.pem
 
+# local shell config — developer-specific, never commit
+.zshrc
+.zshenv
+.zprofile
+.bashrc
+.bash_profile
+
 # local env files
 .env
 .env*.local
